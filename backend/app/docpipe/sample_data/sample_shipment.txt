@@ -1,0 +1,25 @@
+Shipment ID: SHP-88421
+Carrier: DHL Express
+Tracking Number: 1234567890
+Origin: Addis Ababa, ET
+Destination: Dubai, AE
+Ship Date: 2026-11-02
+Delivery Date: 2026-11-05
+Weight: 12.5 kg
+Pieces: 3
+Incoterm: DAP
+Service: Express
+
+---
+
+Shipment ID: SHP-88422
+Carrier: Maersk
+Tracking Number: MAEU-778812
+Origin: Djibouti, DJ
+Destination: Nairobi, KE
+Ship Date: 2026-11-03
+Delivery Date: 2026-11-12
+Weight: 1,240 kg
+Pieces: 18
+Incoterm: FOB
+Service: Ocean freight

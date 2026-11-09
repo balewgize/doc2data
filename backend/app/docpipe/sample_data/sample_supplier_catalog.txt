@@ -1,0 +1,45 @@
+SKU: P-1001
+Title: AeroPress Go Travel Coffee Press
+Description: Compact manual coffee press for travel. Brews up to 237 ml and packs into its own mug.
+Vendor: AeroPress
+Product Type: Coffee Equipment
+Tags: coffee, travel, brewing
+Price: $24.99
+Compare At Price: $29.99
+Currency: USD
+Weight: 1.2 kg
+Dimensions: 10 x 5 x 2 cm
+Image URLs: https://example.com/images/p-1001.jpg
+SEO Title: AeroPress Go Travel Coffee Press
+SEO Description: Compact manual coffee press for travel and camping.
+
+---
+
+SKU: P-1002
+Title: Porlex Mini II Hand Grinder
+Description: Stainless steel conical burr grinder with a compact body for travel.
+Vendor: Porlex
+Product Type: Coffee Equipment
+Tags: grinder, coffee, manual
+Price: €19,99
+Currency: EUR
+Weight: 450 g
+Dimensions: 8 x 4 x 1 in
+Image URLs: https://example.com/images/p-1002.jpg
+
+---
+
+SKU: P-1001
+Title: AeroPress Go Travel Coffee Press (duplicate line)
+Price: $24.99
+Currency: USD
+
+---
+
+SKU: P-1003
+Title: Hario V60 Dripper 02
+Description: Ceramic pour-over dripper for two to four cups.
+Vendor: Hario
+Product Type: Coffee Equipment
+Tags: pour-over, coffee
+Currency: USD

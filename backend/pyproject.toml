@@ -1,0 +1,29 @@
+[project]
+name = "docubridge-backend"
+version = "0.1.0"
+description = "DocuBridge API - turn documents into validated, structured records"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.141.1",
+  "uvicorn[standard]>=0.53.0",
+  "supabase>=2.31.0",
+  "python-multipart>=0.0.12",
+  "python-dotenv>=1.0.1",
+  "pymupdf>=1.24.0",
+  "openpyxl>=3.1.0",
+  "openai>=1.60.0",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0.0",
+  "httpx>=0.27.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+
+[tool.vercel]
+entrypoint = "app.main:app"

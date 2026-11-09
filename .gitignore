@@ -1,0 +1,28 @@
+# env (keep .env.example tracked)
+.env
+.env.local
+.env*.local
+.env.prod
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# local data / databases
+backend/data/
+*.db
+*.sqlite
+*.sqlite3
+
+# node
+node_modules/
+.next/
+next-env.d.ts
+
+# os / editors
+.DS_Store
+.idea/
+.vscode/

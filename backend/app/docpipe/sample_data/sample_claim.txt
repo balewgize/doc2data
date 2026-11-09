@@ -1,0 +1,23 @@
+Claim Number: CLM-2026-9912
+Payer: Acme Health
+Provider: City Clinic
+Service Date: 2026-10-21
+Member ID: M-44821
+Diagnosis Codes: E11.9; I10
+Procedure Codes: 99213; 83036
+Billed Amount: $420.00
+Allowed Amount: $310.00
+Patient Responsibility: $60.00
+
+---
+
+Claim Number: CLM-2026-9913
+Payer: Acme Health
+Provider: Northside Imaging
+Service Date: 2026-10-23
+Member ID: M-44821
+Diagnosis Codes: M54.5
+Procedure Codes: 72148
+Billed Amount: $1,850.00
+Allowed Amount: $1,900.00
+Patient Responsibility: $200.00

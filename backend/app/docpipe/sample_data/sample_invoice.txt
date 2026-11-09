@@ -1,0 +1,38 @@
+Invoice Number: INV-2026-0042
+Vendor: Northwind Supplies
+Invoice Date: 2026-10-12
+Due Date: 2026-11-11
+Currency: USD
+Subtotal: $1,200.00
+Tax: $96.00
+Total: $1,296.00
+PO Number: PO-7781
+Payment Terms: Net 30
+Line Items: 8 x office chairs; 3 x standing desks
+
+---
+
+Invoice Number: INV-2026-0043
+Vendor: Addis Paper Co.
+Invoice Date: 2026-10-20
+Due Date: 2026-11-19
+Currency: ETB
+Subtotal: 18,000.00
+Tax: 2,700.00
+Total: 20,000.00
+Payment Terms: Net 30
+Line Items: A4 paper, 40 boxes
+
+---
+
+Invoice Number: INV-2026-0044
+Vendor: Blue Ridge Logistics
+Invoice Date: 2026-10-24
+Due Date: 2026-11-23
+Currency: USD
+Subtotal: $3,400.00
+Tax: $0.00
+Total: $3,400.00
+PO Number: PO-7800
+Payment Terms: Net 30
+Line Items: Freight and customs handling
