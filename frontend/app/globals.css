@@ -787,18 +787,34 @@ body {
   outline-offset: 2px;
 }
 .tablewrap .cellinput {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: var(--z-raised);
   display: block;
   width: 100%;
-  min-width: 0;
-  padding: 0;
+  min-width: 220px;
+  height: 100%;
+  padding: 0 var(--space-sm);
   border: 0;
   border-radius: 0;
-  background: transparent;
+  background: var(--color-plate);
   color: var(--color-ink);
   font: inherit;
   text-align: inherit;
   outline: 2px solid var(--color-focus);
   outline-offset: -2px;
+}
+.tablewrap td:has(.cellinput) {
+  overflow: visible;
+  z-index: var(--z-raised);
+}
+.tablewrap td:not(:first-child):has(.cellinput) {
+  position: relative;
+}
+.tablewrap td:nth-last-child(-n + 4) .cellinput {
+  right: 0;
+  left: auto;
 }
 .tablewrap .cellinput:disabled {
   opacity: 0.55;
