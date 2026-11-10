@@ -14,7 +14,7 @@ Doc2Data already bundles public demo samples for every vertical:
 
 With the default `mock` provider, the UI serves a bundled demo result for each from
 `backend/app/doc2data/sample_data/real_results/`. Set `LLM_PROVIDER=ollama` with
-`OLLAMA_MODEL=gemma3:1b` (or OpenAI) to extract the original documents live.
+`OLLAMA_MODEL=gemma3:1b` or OpenRouter to extract the original documents live.
 
 Do not use real customer documents in the public demo. Use **public templates, public datasets, or synthetic data with realistic layouts**. Keep private documents in a gitignored folder.
 
@@ -100,7 +100,7 @@ demo_docs/private/
 
 Then:
 
-1. **Demo** with 3–5 docs per vertical. Use `LLM_PROVIDER=openai` or `ollama` for real extraction.
+1. **Demo** with 3–5 docs per vertical. Use `LLM_PROVIDER=openrouter` or `ollama` for real extraction.
 2. **Eval** with 20+ labeled docs. Store expected JSON next to each document in a private `eval/` folder.
 3. **Report** field-level precision/recall, missing-field rate, and cost/latency per document.
 

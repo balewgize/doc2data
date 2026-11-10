@@ -18,7 +18,7 @@ from app.core.config import (
     DATABASE_PATH,
     MAX_UPLOAD_MB,
     OLLAMA_MODEL,
-    OPENAI_MODEL,
+    OPENROUTER_MODEL,
     resolved_provider,
 )
 from app.doc2data.export import export_csv
@@ -164,8 +164,8 @@ def health() -> dict[str, object]:
     model = (
         OLLAMA_MODEL
         if provider == "ollama"
-        else OPENAI_MODEL
-        if provider == "openai"
+        else OPENROUTER_MODEL
+        if provider == "openrouter"
         else "mock"
     )
     return {

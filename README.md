@@ -16,18 +16,21 @@ Requires Docker and Make.
 
 ```bash
 cp .env.example .env
-make up
+docker compose up --build
 ```
 
 Open <http://localhost:3000> for the app and <http://localhost:8000/docs> for the API.
 Click **Try the sample**, review the extracted records, correct a value, download the CSV.
 
 ```bash
-make logs        # follow both services
-make down        # stop
-make prod        # production build via docker-compose.prod.yml
-make prod-down   # stop the production build
+docker compose logs -f   # follow both services
+docker compose down      # stop
+
+docker compose -f docker-compose.prod.yml up -d --build   # production build
+docker compose -f docker-compose.prod.yml down
 ```
+
+Compose reads `.env` from the project root, so provider keys and ports live in one file.
 
 The default provider is `mock`: deterministic, offline, no API key. The bundled public
 samples run the same way.
@@ -50,13 +53,16 @@ pnpm dev -p 3000
 
 ## Providers
 
-**OpenAI**
+**OpenRouter**
 
 ```env
-LLM_PROVIDER=openai
-OPENAI_API_KEY=sk-...
-OPENAI_MODEL=gpt-4o-mini
+LLM_PROVIDER=openrouter
+OPENROUTER_API_KEY=sk-or-...
+OPENROUTER_MODEL=openrouter/auto
 ```
+
+Any model slug from <https://openrouter.ai/models> works. Keep the default
+`openrouter/auto` to let OpenRouter pick, or name a model for reproducible demos.
 
 **Ollama (local)**
 
@@ -70,8 +76,8 @@ OLLAMA_MODEL=gemma3:1b
 ```
 
 Docker reaches the host Ollama through `host.docker.internal`. On Linux, if Ollama listens
-on `127.0.0.1` only, run `make ollama-proxy`. If `LLM_PROVIDER` is unset, the app uses
-OpenAI when a key is present, otherwise `mock`.
+on `127.0.0.1` only, set `OLLAMA_HOST=0.0.0.0:11434` in the Ollama service. If
+`LLM_PROVIDER` is unset, the app uses OpenRouter when a key is present, otherwise `mock`.
 
 ## How it works
 
@@ -98,8 +104,8 @@ Design notes:
 - **One pipeline, one config per industry.** Adding a vertical does not fork the app.
 - **The model proposes, the code disposes.** Normalization, required fields, duplicates,
   totals and cross-field rules run in Python, before and after an inline edit.
-- **A provider interface with a deterministic fallback.** OpenAI, Ollama and `mock` sit
-  behind one call, so demos and tests run offline.
+- **A provider interface with a deterministic fallback.** OpenRouter, Ollama and `mock`
+  sit behind one call, so demos and tests run offline.
 
 ## API
 
@@ -123,8 +129,8 @@ export use it automatically. The existing four are the examples.
 ## Development
 
 ```bash
-make test    # backend tests
-make check   # backend tests + frontend production build
+cd backend && uv run pytest     # backend tests
+cd frontend && pnpm build       # frontend production build
 ```
 
 ## Limits
@@ -138,9 +144,13 @@ make check   # backend tests + frontend production build
 - No auth, workspaces or billing. Inline edits overwrite the run in place; there is no
   correction history yet.
 - LLM output is validated, not guaranteed. The review table is the control.
+- On Vercel, request bodies are capped at 4.5 MB and the filesystem is ephemeral, so
+  SQLite runs do not persist. A hosted demo needs Postgres, object storage and a
+  separate API host; the Loom walkthrough is the intended local demo.
 
 ## Docs
 
+- [Demo script for a 90 second Loom](docs/DEMO.md)
 - [Public samples and licences](docs/REAL_DOCS.md)
 - `./scripts/fetch_demo_docs.sh` downloads a public sample pack into `demo_docs/`
   (gitignored).

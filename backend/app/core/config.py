@@ -1,8 +1,8 @@
 """Runtime configuration for Doc2Data.
 
 Values come from the environment (docker compose or a local shell). For native
-runs we also look for a root ``.env`` and a ``backend/.env`` file so
-``make dev-backend`` behaves like the container.
+runs we also look for a root ``.env`` and a ``backend/.env`` file so a plain
+``uv run uvicorn`` behaves like the container.
 """
 
 from __future__ import annotations
@@ -25,10 +25,11 @@ def _env(name: str, default: str = "") -> str:
 
 
 LLM_PROVIDER = _env("LLM_PROVIDER").lower()
-OPENAI_API_KEY = _env("OPENAI_API_KEY")
-OPENAI_MODEL = _env("OPENAI_MODEL", "gpt-4o-mini")
+OPENROUTER_API_KEY = _env("OPENROUTER_API_KEY")
+OPENROUTER_MODEL = _env("OPENROUTER_MODEL", "openrouter/auto")
+OPENROUTER_BASE_URL = _env("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
 OLLAMA_BASE_URL = _env("OLLAMA_BASE_URL", "http://localhost:11434/v1")
-OLLAMA_MODEL = _env("OLLAMA_MODEL", "llama3.2")
+OLLAMA_MODEL = _env("OLLAMA_MODEL", "gemma3:1b")
 
 _default_database = (
     Path("/tmp/doc2data.db")
@@ -41,7 +42,7 @@ MAX_CHARS_PER_CHUNK = int(_env("MAX_CHARS_PER_CHUNK", "12000"))
 
 
 def resolved_provider() -> str:
-    """Explicit LLM_PROVIDER wins; otherwise use OpenAI when a key exists."""
+    """Explicit LLM_PROVIDER wins; otherwise use OpenRouter when a key exists."""
     if LLM_PROVIDER:
         return LLM_PROVIDER
-    return "openai" if OPENAI_API_KEY else "mock"
+    return "openrouter" if OPENROUTER_API_KEY else "mock"

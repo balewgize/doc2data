@@ -1,7 +1,7 @@
 """LLM providers.
 
 Three implementations share one interface so the rest of the pipeline never
-knows whether extraction runs on OpenAI, a local Ollama model, or the
+knows whether extraction runs on OpenRouter, a local Ollama model, or the
 deterministic mock used for tests and offline demos.
 """
 
@@ -14,8 +14,9 @@ from typing import Any, Protocol
 from app.core.config import (
     OLLAMA_BASE_URL,
     OLLAMA_MODEL,
-    OPENAI_API_KEY,
-    OPENAI_MODEL,
+    OPENROUTER_API_KEY,
+    OPENROUTER_BASE_URL,
+    OPENROUTER_MODEL,
     resolved_provider,
 )
 from app.doc2data.normalize import parse_dimensions
@@ -94,9 +95,18 @@ def _normalize_provider_payload(payload: Any) -> dict[str, Any]:
 
 
 class OpenAICompatibleProvider:
-    """Works with OpenAI and any OpenAI-compatible server (Ollama, vLLM, ...)."""
+    """Works with OpenRouter, Ollama and any OpenAI-compatible server."""
 
-    def __init__(self, *, name: str, model: str, api_key: str, base_url: str | None = None, json_mode: bool = True):
+    def __init__(
+        self,
+        *,
+        name: str,
+        model: str,
+        api_key: str,
+        base_url: str | None = None,
+        json_mode: bool = True,
+        default_headers: dict[str, str] | None = None,
+    ):
         try:
             from openai import OpenAI
         except ImportError as exc:  # pragma: no cover - dependency is in pyproject
@@ -105,7 +115,12 @@ class OpenAICompatibleProvider:
         self.name = name
         self.model = model
         self.json_mode = json_mode
-        self.client = OpenAI(api_key=api_key, base_url=base_url, timeout=90)
+        self.client = OpenAI(
+            api_key=api_key,
+            base_url=base_url,
+            timeout=90,
+            default_headers=default_headers,
+        )
 
     def extract(self, text: str, config: VerticalConfig) -> dict[str, Any]:
         system = build_system_prompt(config)
@@ -223,14 +238,21 @@ def get_provider() -> ExtractionProvider:
     provider = resolved_provider()
     if provider == "mock":
         return MockProvider()
-    if provider == "openai":
-        if not OPENAI_API_KEY:
-            raise ProviderError("LLM_PROVIDER=openai but OPENAI_API_KEY is not set.")
+    if provider == "openrouter":
+        if not OPENROUTER_API_KEY:
+            raise ProviderError(
+                "LLM_PROVIDER=openrouter but OPENROUTER_API_KEY is not set."
+            )
         return OpenAICompatibleProvider(
-            name="openai",
-            model=OPENAI_MODEL,
-            api_key=OPENAI_API_KEY,
-            json_mode=True,
+            name="openrouter",
+            model=OPENROUTER_MODEL,
+            api_key=OPENROUTER_API_KEY,
+            base_url=OPENROUTER_BASE_URL,
+            json_mode=False,
+            default_headers={
+                "HTTP-Referer": "https://github.com/balewgize/doc2data",
+                "X-Title": "Doc2Data",
+            },
         )
     if provider == "ollama":
         return OpenAICompatibleProvider(
@@ -240,4 +262,6 @@ def get_provider() -> ExtractionProvider:
             base_url=OLLAMA_BASE_URL,
             json_mode=False,
         )
-    raise ProviderError(f"Unknown LLM_PROVIDER={provider!r}. Use mock, openai or ollama.")
+    raise ProviderError(
+        f"Unknown LLM_PROVIDER={provider!r}. Use mock, openrouter or ollama."
+    )

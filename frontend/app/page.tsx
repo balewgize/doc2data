@@ -178,12 +178,13 @@ export default function Home() {
 
   const loading = pending !== null;
   const databaseName = health?.database?.split("/").pop() ?? null;
-  const liveProvider = health?.provider === "ollama" || health?.provider === "openai";
+  const liveProvider =
+    health?.provider === "ollama" || health?.provider === "openrouter";
   const providerLabel =
     health?.provider === "ollama"
       ? "Ollama"
-      : health?.provider === "openai"
-        ? "OpenAI"
+      : health?.provider === "openrouter"
+        ? "OpenRouter"
         : null;
 
   const selected = useMemo(
@@ -504,7 +505,7 @@ export default function Home() {
                     title={
                       liveProvider
                         ? `Run the public sample live with ${providerLabel}`
-                        : "Load a bundled result from a public sample, or configure Ollama or OpenAI to re-extract it live"
+                        : "Load a bundled result from a public sample, or configure OpenRouter or Ollama to re-extract it live"
                     }
                     className="btn btn--wide"
                   >
@@ -536,7 +537,7 @@ export default function Home() {
               <p className="helpline">
                 {liveProvider
                   ? `Public samples run live with ${providerLabel}. Local extraction can take a minute.`
-                  : "Public samples are bundled with the project. They run offline in demo mode; set Ollama (gemma3:1b) or OpenAI to re-extract them live."}
+                  : "Public samples are bundled with the project. They run offline in demo mode; set OpenRouter or Ollama (gemma3:1b) to re-extract them live."}
               </p>
             </section>
 
@@ -608,7 +609,7 @@ export default function Home() {
 
                   {run.meta.public_sample === true && (
                     <p className="helpline">
-                      Bundled demo result for a public sample. Configure OpenAI or
+                      Bundled demo result for a public sample. Configure OpenRouter or
                       Ollama to run the document live.
                     </p>
                   )}
@@ -837,7 +838,7 @@ export default function Home() {
               <h2>What it handles</h2>
               <p>
                 PDF, XLSX, CSV, TXT, MD and JSON in, an import-ready CSV out. Extract
-                with OpenAI, Ollama or the deterministic offline provider, then
+                with OpenRouter, Ollama or the deterministic offline provider, then
                 normalize units, currencies, prices and dimensions.
               </p>
               <p>
