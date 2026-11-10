@@ -10,7 +10,7 @@ async function errorMessage(response: Response): Promise<string> {
 }
 
 export async function getVerticals(): Promise<Vertical[]> {
-  const response = await fetch(`${API_URL}/api/docpipe/verticals`, {
+  const response = await fetch(`${API_URL}/api/paperlane/verticals`, {
     cache: "no-store",
   });
   if (!response.ok) throw new Error(await errorMessage(response));
@@ -18,7 +18,7 @@ export async function getVerticals(): Promise<Vertical[]> {
 }
 
 export async function getRuns(): Promise<RunSummary[]> {
-  const response = await fetch(`${API_URL}/api/docpipe/runs`, {
+  const response = await fetch(`${API_URL}/api/paperlane/runs`, {
     cache: "no-store",
   });
   if (!response.ok) throw new Error(await errorMessage(response));
@@ -26,7 +26,7 @@ export async function getRuns(): Promise<RunSummary[]> {
 }
 
 export async function getRun(id: string): Promise<Run> {
-  const response = await fetch(`${API_URL}/api/docpipe/runs/${id}`, {
+  const response = await fetch(`${API_URL}/api/paperlane/runs/${id}`, {
     cache: "no-store",
   });
   if (!response.ok) throw new Error(await errorMessage(response));
@@ -37,7 +37,7 @@ export async function extractFile(file: File, vertical: string): Promise<Run> {
   const form = new FormData();
   form.append("file", file);
   form.append("vertical", vertical);
-  const response = await fetch(`${API_URL}/api/docpipe/extract`, {
+  const response = await fetch(`${API_URL}/api/paperlane/extract`, {
     method: "POST",
     body: form,
   });
@@ -47,7 +47,7 @@ export async function extractFile(file: File, vertical: string): Promise<Run> {
 
 export async function extractSample(vertical: string): Promise<Run> {
   const response = await fetch(
-    `${API_URL}/api/docpipe/extract/sample?vertical=${encodeURIComponent(vertical)}`,
+    `${API_URL}/api/paperlane/extract/sample?vertical=${encodeURIComponent(vertical)}`,
     { method: "POST" }
   );
   if (!response.ok) throw new Error(await errorMessage(response));
@@ -55,5 +55,5 @@ export async function extractSample(vertical: string): Promise<Run> {
 }
 
 export function exportUrl(runId: string): string {
-  return `${API_URL}/api/docpipe/runs/${runId}/export.csv`;
+  return `${API_URL}/api/paperlane/runs/${runId}/export.csv`;
 }

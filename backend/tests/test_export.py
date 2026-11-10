@@ -1,8 +1,8 @@
 import csv
 import io
 
-from app.docpipe.export import export_csv
-from app.docpipe.verticals import ECOMMERCE, FINANCE
+from app.paperlane.export import export_csv
+from app.paperlane.verticals import ECOMMERCE, FINANCE
 
 
 def test_shopify_export_has_expected_columns_and_values():

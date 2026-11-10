@@ -9,8 +9,8 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Any
 
-from app.docpipe.models import WarningItem
-from app.docpipe.verticals import VerticalConfig
+from app.paperlane.models import WarningItem
+from app.paperlane.verticals import VerticalConfig
 
 
 def _blank(value: Any) -> bool:

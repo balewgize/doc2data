@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DocuBridge — documents to clean data",
+  title: "Paperlane — documents to clean data",
   description:
     "Turn supplier catalogs, invoices, shipment notes and claims into validated, structured records.",
 };

@@ -1,4 +1,4 @@
-"""DocuBridge API routes."""
+"""Paperlane API routes."""
 
 from __future__ import annotations
 
@@ -12,17 +12,17 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
 
 from app.core.config import DATABASE_PATH, MAX_UPLOAD_MB, resolved_provider
-from app.docpipe.export import export_csv
-from app.docpipe.extract import ExtractionError, UnsupportedDocument, extract_document
-from app.docpipe.llm import ProviderError
-from app.docpipe.models import Column, Run
-from app.docpipe.storage import get_run, list_runs, save_run
-from app.docpipe.verticals import VERTICALS
+from app.paperlane.export import export_csv
+from app.paperlane.extract import ExtractionError, UnsupportedDocument, extract_document
+from app.paperlane.llm import ProviderError
+from app.paperlane.models import Column, Run
+from app.paperlane.storage import get_run, list_runs, save_run
+from app.paperlane.verticals import VERTICALS
 
-router = APIRouter(prefix="/api/docpipe", tags=["docpipe"])
+router = APIRouter(prefix="/api/paperlane", tags=["paperlane"])
 
 ALLOWED_EXTENSIONS = {".pdf", ".xlsx", ".xlsm", ".csv", ".txt", ".md", ".json"}
-SAMPLE_DIR = Path(__file__).resolve().parent.parent / "docpipe" / "sample_data"
+SAMPLE_DIR = Path(__file__).resolve().parent.parent / "paperlane" / "sample_data"
 
 
 def _config(vertical: str):

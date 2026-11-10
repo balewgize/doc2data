@@ -1,4 +1,4 @@
-"""Runtime configuration for DocuBridge.
+"""Runtime configuration for Paperlane.
 
 Values come from the environment (docker compose or a local shell). For native
 runs we also look for a root ``.env`` and a ``backend/.env`` file so
@@ -31,9 +31,9 @@ OLLAMA_BASE_URL = _env("OLLAMA_BASE_URL", "http://localhost:11434/v1")
 OLLAMA_MODEL = _env("OLLAMA_MODEL", "llama3.2")
 
 _default_database = (
-    Path("/tmp/docubridge.db")
+    Path("/tmp/paperlane.db")
     if os.getenv("VERCEL")
-    else BACKEND_DIR / "data" / "docubridge.db"
+    else BACKEND_DIR / "data" / "paperlane.db"
 )
 DATABASE_PATH = Path(_env("DATABASE_PATH", str(_default_database)))
 MAX_UPLOAD_MB = int(_env("MAX_UPLOAD_MB", "20"))

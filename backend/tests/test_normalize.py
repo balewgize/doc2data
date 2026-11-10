@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import pytest
 
-from app.docpipe.normalize import (
+from app.paperlane.normalize import (
     normalize_record,
     parse_currency,
     parse_decimal,
@@ -10,7 +10,7 @@ from app.docpipe.normalize import (
     parse_weight_grams,
     parse_weight_kg,
 )
-from app.docpipe.verticals import ECOMMERCE, LOGISTICS
+from app.paperlane.verticals import ECOMMERCE, LOGISTICS
 
 
 @pytest.mark.parametrize(

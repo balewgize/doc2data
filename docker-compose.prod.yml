@@ -12,13 +12,13 @@ services:
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
       MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-20}
       MAX_CHARS_PER_CHUNK: ${MAX_CHARS_PER_CHUNK:-12000}
-      DATABASE_PATH: /app/data/docubridge.db
+      DATABASE_PATH: /app/data/paperlane.db
       SUPABASE_URL: ${SUPABASE_URL:-}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
     ports:
       - "8000:8000"
     volumes:
-      - docubridge-data:/app/data
+      - paperlane-data:/app/data
 
   frontend:
     build:
@@ -34,4 +34,4 @@ services:
       - backend
 
 volumes:
-  docubridge-data:
+  paperlane-data:

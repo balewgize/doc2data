@@ -1,15 +1,15 @@
-# DocuBridge
+# Paperlane
 
 **Documents in. Clean data out.**
 
-DocuBridge turns supplier catalogs, invoices, shipment notes and healthcare claims into
+Paperlane turns supplier catalogs, invoices, shipment notes and healthcare claims into
 validated, structured records — then exports an import-ready CSV. One shared extraction
 engine, multiple industry configurations.
 
 Built on [fastapi-nextjs-starter](https://github.com/balewgize/fastapi-nextjs-starter):
 FastAPI + Next.js, Dockerized, Vercel-ready.
 
-![DocuBridge review screen](docs/screenshot.png)
+![Paperlane review screen](docs/screenshot.png)
 
 ---
 
@@ -20,7 +20,7 @@ Shopify, an ERP, a ledger or a warehouse system. It is slow, error-prone and exp
 Generic "chat with your PDF" tools do not solve it because the hard part is not reading
 the document — it is **getting a clean, validated record into the system of record**.
 
-DocuBridge is the workflow layer:
+Paperlane is the workflow layer:
 
 1. Upload a document (PDF, XLSX, CSV, TXT, MD, JSON).
 2. Pick the industry schema.
@@ -54,6 +54,18 @@ set of real documents yet. E-commerce is the reference vertical.
 
 The default provider is `mock`, a deterministic parser for the bundled samples. It works
 offline with no API key. Real PDFs need OpenAI or Ollama.
+
+## Real documents for demos and evals
+
+See [docs/REAL_DOCS.md](docs/REAL_DOCS.md) for public samples, open datasets, and
+licensing notes for each vertical.
+
+```bash
+./scripts/fetch_demo_docs.sh   # downloads a small public pack into demo_docs/ (gitignored)
+```
+
+Use **public templates or synthetic data** for the demo. Keep customer documents in
+`demo_docs/private/` and never commit them.
 
 ---
 
@@ -121,7 +133,7 @@ the mock.
 Next.js UI
    │  multipart upload
    ▼
-FastAPI  /api/docpipe
+FastAPI  /api/paperlane
    │
    ▼
 Extraction pipeline
@@ -140,30 +152,30 @@ Key modules:
 
 | Path | Responsibility |
 |---|---|
-| `backend/app/docpipe/verticals.py` | Industry configs + dynamic Pydantic schemas |
-| `backend/app/docpipe/extract.py` | Read, chunk, call provider, normalize, validate, dedupe |
-| `backend/app/docpipe/normalize.py` | Money, weight, dimensions and currency parsing |
-| `backend/app/docpipe/validate.py` | Cross-field business rules and review notes |
-| `backend/app/docpipe/export.py` | Shopify CSV + generic industry CSV |
-| `backend/app/docpipe/llm.py` | Mock, OpenAI and Ollama providers |
-| `backend/app/docpipe/storage.py` | SQLite run history |
-| `backend/app/routers/docpipe.py` | API routes |
+| `backend/app/paperlane/verticals.py` | Industry configs + dynamic Pydantic schemas |
+| `backend/app/paperlane/extract.py` | Read, chunk, call provider, normalize, validate, dedupe |
+| `backend/app/paperlane/normalize.py` | Money, weight, dimensions and currency parsing |
+| `backend/app/paperlane/validate.py` | Cross-field business rules and review notes |
+| `backend/app/paperlane/export.py` | Shopify CSV + generic industry CSV |
+| `backend/app/paperlane/llm.py` | Mock, OpenAI and Ollama providers |
+| `backend/app/paperlane/storage.py` | SQLite run history |
+| `backend/app/routers/paperlane.py` | API routes |
 
 ## API
 
 | Method | Route | Purpose |
 |---|---|---|
-| GET | `/api/docpipe/verticals` | Available industry schemas |
-| POST | `/api/docpipe/extract` | Upload a document (`file`, `vertical`) |
-| POST | `/api/docpipe/extract/sample?vertical=ecommerce` | Run bundled sample |
-| GET | `/api/docpipe/runs` | Recent runs |
-| GET | `/api/docpipe/runs/{id}` | Full run + records + warnings |
-| GET | `/api/docpipe/runs/{id}/export.csv` | Download CSV |
-| GET | `/api/docpipe/health` | Provider, verticals, database |
+| GET | `/api/paperlane/verticals` | Available industry schemas |
+| POST | `/api/paperlane/extract` | Upload a document (`file`, `vertical`) |
+| POST | `/api/paperlane/extract/sample?vertical=ecommerce` | Run bundled sample |
+| GET | `/api/paperlane/runs` | Recent runs |
+| GET | `/api/paperlane/runs/{id}` | Full run + records + warnings |
+| GET | `/api/paperlane/runs/{id}/export.csv` | Download CSV |
+| GET | `/api/paperlane/health` | Provider, verticals, database |
 
 ## Adding an industry
 
-Add one `VerticalConfig` in `backend/app/docpipe/verticals.py`:
+Add one `VerticalConfig` in `backend/app/paperlane/verticals.py`:
 
 ```python
 INSURANCE = VerticalConfig(

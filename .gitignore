@@ -26,3 +26,8 @@ next-env.d.ts
 .DS_Store
 .idea/
 .vscode/
+
+# third-party / private documents
+demo_docs/
+private_docs/
+eval/private/

@@ -1,7 +1,7 @@
 [project]
-name = "docubridge-backend"
+name = "paperlane-backend"
 version = "0.1.0"
-description = "DocuBridge API - turn documents into validated, structured records"
+description = "Paperlane API - turn documents into validated, structured records"
 requires-python = ">=3.12"
 dependencies = [
   "fastapi>=0.141.1",

@@ -11,7 +11,7 @@ import re
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
-from app.docpipe.verticals import FieldSpec, VerticalConfig
+from app.paperlane.verticals import FieldSpec, VerticalConfig
 
 ISO_CURRENCIES = {
     "USD", "EUR", "GBP", "JPY", "CAD", "AUD", "CHF", "CNY", "INR", "NGN",

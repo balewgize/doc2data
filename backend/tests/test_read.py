@@ -3,9 +3,9 @@ from pathlib import Path
 
 from openpyxl import Workbook
 
-from app.docpipe.extract import chunk_text, read_document
+from app.paperlane.extract import chunk_text, read_document
 
-SAMPLE_DIR = Path(__file__).resolve().parents[1] / "app" / "docpipe" / "sample_data"
+SAMPLE_DIR = Path(__file__).resolve().parents[1] / "app" / "paperlane" / "sample_data"
 
 
 def test_read_pdf_sample():

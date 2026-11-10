@@ -1,5 +1,5 @@
-from app.docpipe.validate import run_status, validate_records
-from app.docpipe.verticals import ECOMMERCE, FINANCE
+from app.paperlane.validate import run_status, validate_records
+from app.paperlane.verticals import ECOMMERCE, FINANCE
 
 
 def test_missing_required_is_an_error():
