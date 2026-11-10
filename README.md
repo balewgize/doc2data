@@ -58,6 +58,8 @@ pipeline. E-commerce is the reference implementation.
    load a bundled result from a real public document.
 6. Click any value in the review table to correct it. The row is saved, warnings are
    recomputed, and the CSV export uses the corrected value.
+7. Open **Source document** under the table to compare the extracted values with the
+   bundled sample.
 
 The default provider is `mock`, a deterministic parser for the synthetic samples. The
 public-sample buttons also work offline by loading bundled demo results from
@@ -216,6 +218,7 @@ Key modules:
 | GET | `/api/doc2data/runs` | Recent runs |
 | GET | `/api/doc2data/runs/{id}` | Full run + records + warnings |
 | PATCH | `/api/doc2data/runs/{id}/records/{index}` | Edit one field, then re-normalize and re-validate |
+| GET | `/api/doc2data/runs/{id}/source` | Preview the bundled source document |
 | GET | `/api/doc2data/runs/{id}/export.csv` | Download CSV |
 | GET | `/api/doc2data/health` | Provider, model, verticals, database |
 
@@ -265,6 +268,7 @@ provider, so the same demo works without an API key.
 - SQLite is single-instance. Production needs Postgres/Supabase, object storage and a job queue.
 - No auth, workspaces or billing yet.
 - Inline edits overwrite the run in place; there is no correction-history ledger yet.
+- Source preview is available for bundled samples; uploaded files are not retained.
 - LLM output is validated, not guaranteed. The review table is the control.
 
 ## Roadmap

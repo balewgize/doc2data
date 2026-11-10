@@ -11,6 +11,7 @@ import {
   getRun,
   getRuns,
   getVerticals,
+  sourceUrl,
   updateRecord,
 } from "@/lib/api";
 import type { Health, Run, RunSummary, Vertical } from "@/lib/types";
@@ -705,6 +706,32 @@ export default function Home() {
                         </table>
                     </div>
                   </div>
+
+                  {run.meta.source_preview === true && (
+                    <details className="source">
+                      <summary>
+                        Source document
+                        <span className="source__file">{run.filename}</span>
+                      </summary>
+                      <div className="source__body">
+                        <iframe
+                          className="source__frame"
+                          src={sourceUrl(run.id)}
+                          title={`Source document: ${run.filename}`}
+                          loading="lazy"
+                        />
+                        <p className="source__note">
+                          <a
+                            href={sourceUrl(run.id)}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Open source in a new tab
+                          </a>
+                        </p>
+                      </div>
+                    </details>
+                  )}
 
                   {sortedWarnings.length > 0 && (
                     <div className="notes">

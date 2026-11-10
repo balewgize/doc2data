@@ -136,3 +136,39 @@ def test_edit_rejects_invalid_input():
             ).status_code
             == 422
         )
+
+
+def test_source_preview_for_bundled_samples():
+    with TestClient(app) as client:
+        sample = client.post("/api/doc2data/extract/sample?vertical=ecommerce").json()
+        response = client.get(f"/api/doc2data/runs/{sample['id']}/source")
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("application/pdf")
+        assert "inline" in response.headers["content-disposition"]
+        assert response.content.startswith(b"%PDF")
+
+        public = client.post(
+            "/api/doc2data/extract/sample?vertical=ecommerce&real=true"
+        ).json()
+        response = client.get(f"/api/doc2data/runs/{public['id']}/source")
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("text/plain")
+        assert "Handle,Title" in response.text
+
+
+def test_source_preview_is_not_available_for_uploads():
+    with TestClient(app) as client:
+        uploaded = client.post(
+            "/api/doc2data/extract",
+            files={"file": ("note.txt", b"hello world", "text/plain")},
+            data={"vertical": "ecommerce"},
+        )
+        assert uploaded.status_code == 200
+        run = uploaded.json()
+        assert run["meta"].get("source_preview") is False
+
+        response = client.get(f"/api/doc2data/runs/{run['id']}/source")
+        assert response.status_code == 404
+
+        missing = client.get("/api/doc2data/runs/missing/source")
+        assert missing.status_code == 404

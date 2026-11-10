@@ -72,6 +72,10 @@ export function exportUrl(runId: string): string {
   return `${API_URL}/api/doc2data/runs/${runId}/export.csv`;
 }
 
+export function sourceUrl(runId: string): string {
+  return `${API_URL}/api/doc2data/runs/${runId}/source`;
+}
+
 export async function updateRecord(
   runId: string,
   index: number,

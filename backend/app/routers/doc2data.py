@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
-from fastapi.responses import Response
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field
 
 from app.core.config import (
@@ -95,6 +95,7 @@ def _run_document(path: Path, filename: str, vertical: str) -> Run:
     except ProviderError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
+    result.meta["source_preview"] = path.parent.resolve() == SAMPLE_DIR.resolve()
     return _save_result(result, filename, config)
 
 
@@ -127,6 +128,7 @@ def _bundled_real_sample(config) -> Run:
             "elapsed_ms": 0,
             "recorded_with": payload.get("recorded_with"),
             "public_sample": True,
+            "source_preview": True,
         },
     )
     return _save_result(result, config.real_sample_file or fixture_path.name, config)
@@ -273,6 +275,40 @@ def edit_record(run_id: str, index: int, edit: RecordEdit) -> Run:
     run.status = run_status(run.records, run.warnings)
     save_run(run)
     return run
+
+
+@router.get("/runs/{run_id}/source")
+def run_source(run_id: str) -> FileResponse:
+    run = get_run(run_id)
+    if run is None or run.meta.get("source_preview") is not True:
+        raise HTTPException(
+            status_code=404,
+            detail="Source preview is not available for this run.",
+        )
+
+    config = _config(run.vertical)
+    allowed = {name for name in (config.sample_file, config.real_sample_file) if name}
+    if run.filename not in allowed:
+        raise HTTPException(
+            status_code=404,
+            detail="Source preview is not available for this run.",
+        )
+
+    path = SAMPLE_DIR / run.filename
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Source file not found.")
+
+    media_type = (
+        "application/pdf"
+        if path.suffix.lower() == ".pdf"
+        else "text/plain; charset=utf-8"
+    )
+    return FileResponse(
+        path,
+        media_type=media_type,
+        filename=path.name,
+        content_disposition_type="inline",
+    )
 
 
 @router.get("/runs/{run_id}/export.csv")
