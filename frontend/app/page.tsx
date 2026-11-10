@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   API_URL,
@@ -11,6 +11,7 @@ import {
   getRun,
   getRuns,
   getVerticals,
+  updateRecord,
 } from "@/lib/api";
 import type { Health, Run, RunSummary, Vertical } from "@/lib/types";
 
@@ -36,6 +37,13 @@ function formatValue(value: unknown): string {
   return String(value);
 }
 
+function toDraft(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  if (Array.isArray(value)) return value.join(", ");
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
 function formatDate(iso: string): string {
   try {
     return new Date(iso).toLocaleString(undefined, {
@@ -55,6 +63,99 @@ function formatBytes(value: unknown): string {
   if (number < 1024) return `${number} B`;
   if (number < 1024 * 1024) return `${(number / 1024).toFixed(1)} KB`;
   return `${(number / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+type EditableCellProps = {
+  runId: string;
+  recordIndex: number;
+  field: string;
+  label: string;
+  value: unknown;
+  onSaved: (run: Run) => void;
+  onError: (message: string) => void;
+};
+
+function EditableCell({
+  runId,
+  recordIndex,
+  field,
+  label,
+  value,
+  onSaved,
+  onError,
+}: EditableCellProps) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  const cancelled = useRef(false);
+
+  function startEditing() {
+    cancelled.current = false;
+    setDraft(toDraft(value));
+    setEditing(true);
+  }
+
+  function cancelEditing() {
+    cancelled.current = true;
+    setEditing(false);
+  }
+
+  async function save() {
+    if (savingRef.current || cancelled.current) {
+      cancelled.current = false;
+      return;
+    }
+    savingRef.current = true;
+    setSaving(true);
+    try {
+      const updated = await updateRecord(runId, recordIndex, field, draft);
+      setEditing(false);
+      onSaved(updated);
+    } catch (reason) {
+      onError(
+        reason instanceof Error ? reason.message : "Could not save the change."
+      );
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
+  }
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        className="cellbtn"
+        title={`Edit ${label}`}
+        aria-label={`Edit ${label}: ${formatValue(value)}`}
+        onClick={startEditing}
+      >
+        {formatValue(value)}
+      </button>
+    );
+  }
+
+  return (
+    <input
+      className="cellinput"
+      value={draft}
+      autoFocus
+      disabled={saving}
+      aria-label={`Edit ${label}`}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={() => void save()}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          void save();
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          cancelEditing();
+        }
+      }}
+    />
+  );
 }
 
 type Pending = "file" | "sample" | "real" | "load" | null;
@@ -166,6 +267,12 @@ export default function Home() {
     }
   }
 
+  function handleRecordSaved(updated: Run) {
+    setRun((current) => (current?.id === updated.id ? updated : current));
+    setStageError(null);
+    void refreshRuns();
+  }
+
   function handleDrop(event: React.DragEvent<HTMLLabelElement>) {
     event.preventDefault();
     setDragging(false);
@@ -240,10 +347,10 @@ export default function Home() {
             <div className="intro__text">
               <h1 id="page-title">Turn messy documents into validated records.</h1>
               <p>
-                Upload a supplier catalog, invoice,
-                shipment note or claim, extract the fields with an LLM (or the offline
-                demo), catch missing or conflicting data, and export a clean CSV. One
-                engine, four industry schemas.
+                A portfolio project: upload a supplier catalog, invoice, shipment note
+                or claim, extract the fields with an LLM (or the offline demo), catch
+                missing or conflicting data, and export a clean CSV. One engine, four
+                industry schemas.
               </p>
             </div>
             <dl className="specs" aria-label="Extraction environment">
@@ -505,9 +612,12 @@ export default function Home() {
                     ))}
                   </dl>
 
-                  {visibleColumns.length > 6 && (
+                  {run.records.length > 0 && (
                     <p className="tablehint">
-                      {visibleColumns.length} columns, scroll to see them all.
+                      Click any value to edit.
+                      {visibleColumns.length > 6
+                        ? ` ${visibleColumns.length} columns, scroll to see them all.`
+                        : ""}
                     </p>
                   )}
 
@@ -515,11 +625,13 @@ export default function Home() {
                     <div
                       className="tablewrap"
                       role="region"
-                      aria-label="Extracted records, scrolls horizontally"
+                      aria-label="Extracted records. Click a value to edit, or scroll horizontally."
                       tabIndex={0}
                     >
                       <table>
-                        <caption className="visually-hidden">Extracted records</caption>
+                        <caption className="visually-hidden">
+                          Extracted records. Click a value to edit.
+                        </caption>
                         <thead>
                           <tr>
                             {visibleColumns.map((column) => (
@@ -540,22 +652,26 @@ export default function Home() {
                         <tbody>
                           {run.records.map((record, index) => (
                             <tr key={index}>
-                              {visibleColumns.map((column) => {
-                                const value = formatValue(record[column.key]);
-                                return (
-                                  <td
-                                    key={column.key}
-                                    title={value}
-                                    className={
-                                      ["int", "float", "decimal"].includes(column.type)
-                                        ? "num"
-                                        : undefined
-                                    }
-                                  >
-                                    {value}
-                                  </td>
-                                );
-                              })}
+                              {visibleColumns.map((column) => (
+                                <td
+                                  key={column.key}
+                                  className={
+                                    ["int", "float", "decimal"].includes(column.type)
+                                      ? "num"
+                                      : undefined
+                                  }
+                                >
+                                  <EditableCell
+                                    runId={run.id}
+                                    recordIndex={index}
+                                    field={column.key}
+                                    label={column.label}
+                                    value={record[column.key]}
+                                    onSaved={handleRecordSaved}
+                                    onError={(message) => setStageError(message)}
+                                  />
+                                </td>
+                              ))}
                             </tr>
                           ))}
                           {!run.records.length && (

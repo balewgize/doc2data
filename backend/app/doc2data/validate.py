@@ -37,6 +37,38 @@ def _record_key(record: dict[str, Any], config: VerticalConfig) -> str:
     return str(record.get(config.dedupe_key) or "unknown")
 
 
+VALIDATION_CODES = frozenset(
+    {
+        "missing_required",
+        "missing_recommended",
+        "negative_value",
+        "invalid_currency",
+        "compare_at_below_price",
+        "total_mismatch",
+        "due_before_invoice",
+        "invalid_weight",
+        "invalid_pieces",
+        "allowed_above_billed",
+        "patient_above_allowed",
+    }
+)
+
+
+def refresh_warnings(
+    records: list[dict[str, Any]],
+    current: list[WarningItem],
+    config: VerticalConfig,
+) -> list[WarningItem]:
+    """Keep extraction warnings and recompute the validation warnings.
+
+    Extraction warnings (duplicates, chunk failures, ...) describe what happened
+    while reading the document and stay fixed. Validation warnings describe the
+    current records and must be recomputed after a human edit.
+    """
+    extraction = [warning for warning in current if warning.code not in VALIDATION_CODES]
+    return extraction + validate_records(records, config)
+
+
 def validate_records(records: list[dict[str, Any]], config: VerticalConfig) -> list[WarningItem]:
     warnings: list[WarningItem] = []
 

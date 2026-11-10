@@ -761,6 +761,48 @@ body {
   font-family: var(--font-outlier);
   font-size: var(--text-xs);
 }
+.tablewrap .cellbtn {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: text;
+}
+.tablewrap .cellbtn:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--color-rule);
+  text-underline-offset: 0.18em;
+}
+.tablewrap .cellbtn:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.tablewrap .cellinput {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-ink);
+  font: inherit;
+  text-align: inherit;
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+.tablewrap .cellinput:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
 
 /* ---------- review notes ---------- */
 .notes {

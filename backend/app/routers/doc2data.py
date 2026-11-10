@@ -8,9 +8,11 @@ import tempfile
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
+from pydantic import BaseModel, Field
 
 from app.core.config import DATABASE_PATH, MAX_UPLOAD_MB, resolved_provider
 from app.doc2data.export import export_csv
@@ -22,9 +24,9 @@ from app.doc2data.extract import (
 )
 from app.doc2data.llm import ProviderError
 from app.doc2data.models import Column, Run
-from app.doc2data.normalize import normalize_record
+from app.doc2data.normalize import normalize_record, normalize_value
 from app.doc2data.storage import get_run, list_runs, save_run
-from app.doc2data.validate import validate_records
+from app.doc2data.validate import refresh_warnings, run_status, validate_records
 from app.doc2data.verticals import VERTICALS
 
 router = APIRouter(prefix="/api/doc2data", tags=["doc2data"])
@@ -32,6 +34,11 @@ router = APIRouter(prefix="/api/doc2data", tags=["doc2data"])
 ALLOWED_EXTENSIONS = {".pdf", ".xlsx", ".xlsm", ".csv", ".txt", ".md", ".json"}
 SAMPLE_DIR = Path(__file__).resolve().parent.parent / "doc2data" / "sample_data"
 REAL_RESULTS_DIR = SAMPLE_DIR / "real_results"
+
+
+class RecordEdit(BaseModel):
+    field: str = Field(min_length=1)
+    value: Any = None
 
 
 def _config(vertical: str):
@@ -214,6 +221,42 @@ def run_detail(run_id: str) -> Run:
     run = get_run(run_id)
     if run is None:
         raise HTTPException(status_code=404, detail="Run not found.")
+    return run
+
+
+@router.patch("/runs/{run_id}/records/{index}", response_model=Run)
+def edit_record(run_id: str, index: int, edit: RecordEdit) -> Run:
+    run = get_run(run_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail="Run not found.")
+    if index < 0 or index >= len(run.records):
+        raise HTTPException(status_code=404, detail="Record not found.")
+
+    config = _config(run.vertical)
+    field = config.field(edit.field)
+    if field is None:
+        raise HTTPException(status_code=400, detail=f"Unknown field {edit.field!r}.")
+
+    normalized = normalize_value(edit.value, field)
+    raw = "" if edit.value is None else str(edit.value).strip()
+    if (
+        raw
+        and normalized is None
+        and (field.type in ("decimal", "int", "float") or field.normalizer == "currency")
+    ):
+        raise HTTPException(status_code=422, detail=f"{field.label} has an invalid value.")
+    if (
+        field.normalizer == "date"
+        and raw
+        and normalized is not None
+        and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(normalized))
+    ):
+        raise HTTPException(status_code=422, detail=f"{field.label} must be a date.")
+
+    run.records[index][field.name] = normalized
+    run.warnings = refresh_warnings(run.records, run.warnings, config)
+    run.status = run_status(run.records, run.warnings)
+    save_run(run)
     return run
 
 

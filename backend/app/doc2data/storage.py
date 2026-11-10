@@ -51,6 +51,11 @@ def save_run(run: Run) -> None:
                 id, created_at, vertical, vertical_label, filename, provider,
                 status, record_count, warning_count, payload_json
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                status = excluded.status,
+                record_count = excluded.record_count,
+                warning_count = excluded.warning_count,
+                payload_json = excluded.payload_json
             """,
             (
                 run.id,

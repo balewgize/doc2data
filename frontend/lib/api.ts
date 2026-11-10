@@ -71,3 +71,21 @@ export async function extractSample(
 export function exportUrl(runId: string): string {
   return `${API_URL}/api/doc2data/runs/${runId}/export.csv`;
 }
+
+export async function updateRecord(
+  runId: string,
+  index: number,
+  field: string,
+  value: unknown
+): Promise<Run> {
+  const response = await fetch(
+    `${API_URL}/api/doc2data/runs/${runId}/records/${index}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ field, value }),
+    }
+  );
+  if (!response.ok) throw new Error(await errorMessage(response));
+  return response.json() as Promise<Run>;
+}

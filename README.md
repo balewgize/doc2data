@@ -55,6 +55,8 @@ pipeline. E-commerce is the reference implementation.
 4. Download the Shopify CSV.
 5. Switch verticals and click **Try public invoice / BOL / claim** (or **catalog**) to
    load a bundled result from a real public document.
+6. Click any value in the review table to correct it. The row is saved, warnings are
+   recomputed, and the CSV export uses the corrected value.
 
 The default provider is `mock`, a deterministic parser for the synthetic samples. The
 public-sample buttons also work offline by loading bundled demo results from
@@ -180,6 +182,7 @@ Key modules:
 | POST | `/api/doc2data/extract/sample?vertical=ecommerce` | Run bundled sample |
 | GET | `/api/doc2data/runs` | Recent runs |
 | GET | `/api/doc2data/runs/{id}` | Full run + records + warnings |
+| PATCH | `/api/doc2data/runs/{id}/records/{index}` | Edit one field, then re-normalize and re-validate |
 | GET | `/api/doc2data/runs/{id}/export.csv` | Download CSV |
 | GET | `/api/doc2data/health` | Provider, verticals, database |
 
@@ -211,7 +214,7 @@ Register it in `VERTICALS`. The pipeline, API, UI and CSV export pick it up auto
 ## Tests
 
 ```bash
-make test        # backend: 47 tests
+make test        # backend: 50 tests
 make check       # backend tests + frontend production build
 ```
 
