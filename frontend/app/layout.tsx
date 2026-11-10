@@ -23,7 +23,7 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Doc2Data: documents to clean data",
   description:
-    "A portfolio project that turns supplier catalogs, invoices, shipment notes and claims into validated, structured records.",
+    "Turn supplier catalogs, invoices, shipment notes and claims into validated, structured records and an import-ready CSV.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

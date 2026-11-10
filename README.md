@@ -2,14 +2,15 @@
 
 **Documents in. Clean data out.**
 
-Doc2Data turns supplier catalogs, invoices, shipment notes and healthcare claims into
-validated, structured records — then exports an import-ready CSV. One shared extraction
-engine, multiple industry configurations.
+Doc2Data turns supplier catalogs, invoices, shipment notes and claims into validated,
+structured records and an import-ready CSV. One shared extraction engine, four industry
+configurations: the same pipeline, different schemas and export mappings.
 
 Built on [fastapi-nextjs-starter](https://github.com/balewgize/fastapi-nextjs-starter):
 FastAPI + Next.js, Dockerized, Vercel-ready.
 
-This is a portfolio project: an end-to-end workflow demo, not a production service.
+Complete end to end as a single-user workflow; [Limits](#limits) names what a hosted
+production service still needs.
 
 ![Doc2Data review screen](docs/screenshot.png)
 
@@ -182,6 +183,29 @@ Key modules:
 | `backend/app/doc2data/storage.py` | SQLite run history |
 | `backend/app/routers/doc2data.py` | API routes |
 
+## Decisions and tradeoffs
+
+- **One pipeline, one config per industry.** A vertical is a `VerticalConfig`: field
+  specs, a prompt, a dedupe key and an export mapping. Adding a vertical does not fork
+  the app. The tradeoff is a shared vocabulary of field types and normalizers; a
+  genuinely different pipeline would extend the core.
+- **The model proposes, the code disposes.** Extracted values are normalized and
+  validated in Python before a record is shown, and again after an inline edit. Required
+  and recommended fields, duplicates, totals and cross-field rules are code, not prompt
+  instructions.
+- **A provider interface with a deterministic fallback.** OpenAI, Ollama and a mock
+  provider sit behind one call. The mock keeps demos and tests reproducible offline;
+  switching to a real model is configuration, not a rewrite.
+- **CSV before API sync.** The system of record already accepts an import file, so an
+  import-ready CSV is the shortest path to value. Direct Shopify or ERP sync is an
+  integration on top, not a prerequisite.
+- **Human correction is a step, not a fallback.** Every value in the review table is
+  editable; an edit re-normalizes and re-validates the run, and the export uses the
+  corrected value.
+- **Single-user SQLite now.** Auth, workspaces, a job queue and managed storage are
+  named and deferred. The tradeoff is scale for iteration speed, and the limits below
+  are explicit.
+
 ## API
 
 | Method | Route | Purpose |
@@ -220,14 +244,18 @@ INSURANCE = VerticalConfig(
 
 Register it in `VERTICALS`. The pipeline, API, UI and CSV export pick it up automatically.
 
-## Tests
+## Evidence
 
 ```bash
-make test        # backend: 50 tests
+make test        # backend test suite
 make check       # backend tests + frontend production build
 ```
 
-## Current limitations
+The suite covers the pipeline, normalizers, validators, exports and API routes. The
+bundled public samples run offline from recorded results and live through a configured
+provider, so the same demo works without an API key.
+
+## Limits
 
 - Scanned PDFs need OCR before upload; the app reads embedded text only.
 - E-commerce models one record per SKU; variant axes are not split yet.

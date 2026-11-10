@@ -354,10 +354,11 @@ export default function Home() {
             <div className="intro__text">
               <h1 id="page-title">Turn messy documents into validated records.</h1>
               <p>
-                A portfolio project: upload a supplier catalog, invoice, shipment note
-                or claim, extract the fields with an LLM (or the offline demo), correct
-                them in place, catch missing or conflicting data, and export a clean
-                CSV. One engine, four industry schemas.
+                Operations teams still retype supplier catalogs, invoices, shipment
+                notes and claims by hand. Doc2Data extracts the fields with an LLM,
+                normalizes units and currencies, flags missing or conflicting values,
+                and lets you correct them inline before exporting an import-ready CSV.
+                One engine, four industry schemas.
               </p>
             </div>
             <dl className="specs" aria-label="Extraction environment">
@@ -793,15 +794,29 @@ export default function Home() {
         <section className="band" aria-labelledby="about-title">
           <div className="container band__grid">
             <div className="band__col">
-              <h2 id="about-title">About this project</h2>
+              <h2 id="about-title">The problem</h2>
               <p>
-                Doc2Data is a portfolio project: a complete document-to-data
-                workflow, from upload and LLM extraction through normalization,
-                validation and human-in-the-loop correction to CSV export.
+                Every operations team has someone retyping data from PDFs, spreadsheets
+                and emails into Shopify, an ERP, a ledger or a warehouse system. It is
+                slow, error-prone and expensive.
               </p>
               <p>
-                The core is shared. Each industry adds a schema, a prompt and an export
-                mapping, not a new app.
+                Chat-with-your-PDF tools return text. The hard part is a clean,
+                validated record in the system of record, and that is the workflow
+                Doc2Data is built around.
+              </p>
+            </div>
+            <div className="band__col band__col--status">
+              <h2>What it handles</h2>
+              <p>
+                PDF, XLSX, CSV, TXT, MD and JSON in, an import-ready CSV out. Extract
+                with OpenAI, Ollama or the deterministic offline provider, then
+                normalize units, currencies, prices and dimensions.
+              </p>
+              <p>
+                Validation covers required fields, duplicates, totals and cross-field
+                rules. Review notes point at the record that needs attention, every
+                value edits inline, and an edit is re-validated before export.
               </p>
               <ul className="tags">
                 {[
@@ -816,37 +831,15 @@ export default function Home() {
                 ))}
               </ul>
             </div>
-            <div className="band__col band__col--status">
-              <h2>Scope and stack</h2>
-              <p>
-                Single-user portfolio build: FastAPI, Next.js and SQLite. Extraction
-                runs with Ollama (gemma3:1b), OpenAI, or a deterministic offline demo
-                provider.
-              </p>
-              <p>
-                Public samples are bundled for reproducible demos. Edits are saved in
-                place. No auth, billing, job queue or managed storage yet.
-              </p>
-              <p>
-                <a
-                  className="band__link"
-                  href="https://github.com/balewgize/doc2data"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  View the source on GitHub
-                </a>
-              </p>
-            </div>
           </div>
         </section>
       </main>
 
       <footer className="footer">
         <div className="container footer__in">
-          <p>Doc2Data. A portfolio project by Alemnew Marie.</p>
+          <p>Doc2Data by Alemnew Marie. Documents in. Clean data out.</p>
           <p>
-            FastAPI, Next.js and SQLite.{" "}
+            Single-user build on FastAPI, Next.js and SQLite.{" "}
             <a
               href="https://github.com/balewgize/doc2data"
               target="_blank"
