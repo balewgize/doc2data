@@ -39,3 +39,14 @@ def test_unknown_vertical_is_rejected():
     with TestClient(app) as client:
         response = client.post("/api/paperlane/extract/sample?vertical=nope")
         assert response.status_code == 400
+
+
+def test_real_samples_are_bundled_but_need_a_real_provider():
+    with TestClient(app) as client:
+        verticals = {v["id"]: v for v in client.get("/api/paperlane/verticals").json()}
+        assert all(v["real_sample"] is True for v in verticals.values())
+
+        # Mock cannot parse the public real-world docs, so the API explains why.
+        response = client.post("/api/paperlane/extract/sample?vertical=finance&real=true")
+        assert response.status_code == 400
+        assert "LLM_PROVIDER=openai" in response.json()["detail"]

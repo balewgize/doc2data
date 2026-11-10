@@ -122,6 +122,10 @@ OLLAMA_MODEL=llama3.2
 
 In Docker, point `OLLAMA_BASE_URL` at `http://host.docker.internal:11434/v1`.
 
+The bundled public samples are a Shopify catalog, AWS invoice, VICS BOL and CMS-1500
+claim. The invoice and BOL were verified with `gemma3:1b` locally; a frontier model
+will handle messier documents better.
+
 If `LLM_PROVIDER` is unset, the app uses OpenAI when `OPENAI_API_KEY` exists, otherwise
 the mock.
 
@@ -201,7 +205,7 @@ Register it in `VERTICALS`. The pipeline, API, UI and CSV export pick it up auto
 ## Tests
 
 ```bash
-make test        # backend: 36 tests
+make test        # backend: 47 tests
 make check       # backend tests + frontend production build
 ```
 

@@ -3,14 +3,16 @@ from decimal import Decimal
 import pytest
 
 from app.paperlane.normalize import (
+    clean_vendor,
     normalize_record,
     parse_currency,
+    parse_date,
     parse_decimal,
     parse_dimensions,
     parse_weight_grams,
     parse_weight_kg,
 )
-from app.paperlane.verticals import ECOMMERCE, LOGISTICS
+from app.paperlane.verticals import ECOMMERCE, FINANCE, LOGISTICS
 
 
 @pytest.mark.parametrize(
@@ -91,3 +93,55 @@ def test_normalize_record_expands_dimensions_and_weight():
 def test_normalize_record_handles_logistics_weight():
     record = normalize_record({"Shipment ID": "S-1", "Weight": "12.5 kg"}, LOGISTICS)
     assert record["weight_kg"] == 12.5
+
+
+def test_normalize_record_prefers_bol_number_over_a_header_label():
+    record = normalize_record(
+        {
+            "Shipment ID": "COD Amount: $________",
+            "BOL Number": "BOL-2026-00421",
+            "PRO Number": "PRO-123456789",
+            "Weight": "1,240 lb",
+            "Pieces": "12",
+        },
+        LOGISTICS,
+    )
+    assert record["shipment_id"] == "BOL-2026-00421"
+    assert record["tracking_number"] == "PRO-123456789"
+    assert record["weight_kg"] == 562.455
+    assert record["pieces"] == 12
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("August 3, 2014", "2014-08-03"),
+        ("3 Aug 2014", "2014-08-03"),
+        ("13/08/2014", "2014-08-13"),
+        ("2026-11-06", "2026-11-06"),
+        ("not a date", "not a date"),
+    ],
+)
+def test_parse_date(raw, expected):
+    assert parse_date(raw) == expected
+
+
+def test_clean_vendor_removes_address_noise():
+    assert clean_vendor("ATTN: Amazon Web Services Invoice") == "Amazon Web Services"
+    assert clean_vendor("Bill to: Northwind Trading Ltd") == "Northwind Trading Ltd"
+    assert clean_vendor("Acme Supplies") == "Acme Supplies"
+
+
+def test_normalize_record_normalizes_finance_dates():
+    record = normalize_record(
+        {
+            "Invoice Number": "INV-1",
+            "Vendor": "Acme",
+            "Invoice Date": "August 3, 2014",
+            "Due Date": "2014-08-31",
+            "Total": "$4.11",
+        },
+        FINANCE,
+    )
+    assert record["invoice_date"] == "2014-08-03"
+    assert record["due_date"] == "2014-08-31"

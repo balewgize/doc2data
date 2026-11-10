@@ -80,6 +80,7 @@ def verticals() -> list[dict[str, object]]:
             "label": config.label,
             "description": config.description,
             "ready": config.ready,
+            "real_sample": bool(config.real_sample_file),
             "fields": [
                 {
                     "name": f.name,
@@ -137,9 +138,26 @@ async def extract(
 
 
 @router.post("/extract/sample", response_model=Run)
-def extract_sample(vertical: str = "ecommerce") -> Run:
+def extract_sample(vertical: str = "ecommerce", real: bool = False) -> Run:
     config = _config(vertical)
-    sample = SAMPLE_DIR / config.sample_file
+    if real:
+        if not config.real_sample_file:
+            raise HTTPException(
+                status_code=400,
+                detail=f"No real sample is bundled for {config.label}.",
+            )
+        if resolved_provider() == "mock":
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Real samples need a real extraction provider. "
+                    "Set LLM_PROVIDER=openai or LLM_PROVIDER=ollama."
+                ),
+            )
+        sample = SAMPLE_DIR / config.real_sample_file
+    else:
+        sample = SAMPLE_DIR / config.sample_file
+
     if not sample.exists():
         raise HTTPException(status_code=404, detail=f"Sample file missing for {config.id}.")
     return _run_document(sample, sample.name, config.id)

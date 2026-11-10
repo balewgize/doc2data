@@ -11,7 +11,16 @@ export type Vertical = {
   label: string;
   description: string;
   ready: boolean;
+  real_sample: boolean;
   fields: Field[];
+};
+
+export type Health = {
+  status: string;
+  provider: string;
+  verticals: string[];
+  database: string;
+  max_upload_mb: number;
 };
 
 export type Warning = {

@@ -1,4 +1,4 @@
-import type { Run, RunSummary, Vertical } from "./types";
+import type { Health, Run, RunSummary, Vertical } from "./types";
 
 export const API_URL = (
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
@@ -15,6 +15,14 @@ export async function getVerticals(): Promise<Vertical[]> {
   });
   if (!response.ok) throw new Error(await errorMessage(response));
   return response.json() as Promise<Vertical[]>;
+}
+
+export async function getHealth(): Promise<Health> {
+  const response = await fetch(`${API_URL}/api/paperlane/health`, {
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error(await errorMessage(response));
+  return response.json() as Promise<Health>;
 }
 
 export async function getRuns(): Promise<RunSummary[]> {
@@ -45,9 +53,14 @@ export async function extractFile(file: File, vertical: string): Promise<Run> {
   return response.json() as Promise<Run>;
 }
 
-export async function extractSample(vertical: string): Promise<Run> {
+export async function extractSample(
+  vertical: string,
+  real = false
+): Promise<Run> {
+  const query = new URLSearchParams({ vertical });
+  if (real) query.set("real", "true");
   const response = await fetch(
-    `${API_URL}/api/paperlane/extract/sample?vertical=${encodeURIComponent(vertical)}`,
+    `${API_URL}/api/paperlane/extract/sample?${query.toString()}`,
     { method: "POST" }
   );
   if (!response.ok) throw new Error(await errorMessage(response));

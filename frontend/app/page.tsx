@@ -7,6 +7,7 @@ import {
   exportUrl,
   extractFile,
   extractSample,
+  getHealth,
   getRun,
   getRuns,
   getVerticals,
@@ -68,6 +69,7 @@ export default function Home() {
   const [dragging, setDragging] = useState(false);
   const [run, setRun] = useState<Run | null>(null);
   const [runs, setRuns] = useState<RunSummary[]>([]);
+  const [provider, setProvider] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -86,11 +88,12 @@ export default function Home() {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([getVerticals(), getRuns()])
-      .then(([verticalList, runList]) => {
+    Promise.all([getVerticals(), getRuns(), getHealth()])
+      .then(([verticalList, runList, health]) => {
         if (cancelled) return;
         setVerticals(verticalList);
         setRuns(runList);
+        setProvider(health.provider);
         if (verticalList.length) {
           setVertical((current) =>
             verticalList.some((v) => v.id === current) ? current : verticalList[0].id
@@ -107,7 +110,7 @@ export default function Home() {
     };
   }, []);
 
-  async function handleExtract(useSample = false) {
+  async function handleExtract(useSample = false, real = false) {
     if (!useSample && !file) {
       setError("Choose a document first, or try the sample.");
       return;
@@ -116,7 +119,7 @@ export default function Home() {
     setError(null);
     try {
       const result = useSample
-        ? await extractSample(vertical)
+        ? await extractSample(vertical, real)
         : await extractFile(file as File, vertical);
       setRun(result);
       await refreshRuns();
@@ -157,6 +160,18 @@ export default function Home() {
     const order = { error: 0, warning: 1, info: 2 };
     return [...run.warnings].sort((a, b) => order[a.severity] - order[b.severity]);
   }, [run]);
+
+  const canUseReal = provider === "openai" || provider === "ollama";
+  const realSampleLabel =
+    selected?.id === "ecommerce"
+      ? "Try real catalog"
+      : selected?.id === "finance"
+        ? "Try real invoice"
+        : selected?.id === "logistics"
+          ? "Try real BOL"
+          : selected?.id === "healthcare"
+            ? "Try real claim"
+            : "Try real doc";
 
   return (
     <div className="min-h-screen bg-[#f7f7f5] text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
@@ -327,6 +342,21 @@ export default function Home() {
                   >
                     Try the sample
                   </button>
+                  {selected?.real_sample && (
+                    <button
+                      type="button"
+                      onClick={() => handleExtract(true, true)}
+                      disabled={loading || !canUseReal}
+                      title={
+                        canUseReal
+                          ? "Run a public real-world document"
+                          : "Set LLM_PROVIDER=openai or ollama in .env to run real samples"
+                      }
+                      className="rounded-lg border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 transition hover:border-emerald-500 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
+                    >
+                      {realSampleLabel}
+                    </button>
+                  )}
                   {file && (
                     <button
                       type="button"
@@ -337,6 +367,11 @@ export default function Home() {
                     </button>
                   )}
                 </div>
+                <p className="mt-3 text-xs leading-5 text-zinc-500">
+                  Real samples use public documents (Shopify catalog, AWS invoice,
+                  VICS BOL, CMS-1500). They need OpenAI or Ollama; the offline mock
+                  only parses the synthetic samples.
+                </p>
               </div>
             </section>
 
@@ -564,7 +599,7 @@ export default function Home() {
                 Offline demo uses the deterministic mock provider. Set{" "}
                 <code className="rounded bg-zinc-800 px-1 py-0.5">LLM_PROVIDER=openai</code>{" "}
                 or <code className="rounded bg-zinc-800 px-1 py-0.5">ollama</code> for
-                real extraction.
+                real extraction, including the bundled public samples.
               </p>
             </section>
           </aside>

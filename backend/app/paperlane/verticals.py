@@ -22,6 +22,8 @@ Normalizer = Literal[
     "weight_grams",
     "weight_kg",
     "dimension_cm",
+    "date",
+    "vendor",
 ]
 
 
@@ -47,6 +49,7 @@ class VerticalConfig:
     system_prompt: str
     export_columns: tuple[tuple[str, str], ...]
     sample_file: str
+    real_sample_file: str | None = None
     ready: bool = True
 
     @property
@@ -112,11 +115,12 @@ ECOMMERCE = VerticalConfig(
     record_noun="product",
     dedupe_key="sku",
     sample_file="sample_supplier_catalog.pdf",
+    real_sample_file="sample_catalog_public.csv",
     fields=(
         FieldSpec("sku", "SKU", required=True, description="Supplier or internal SKU.", normalizer="text"),
         FieldSpec("title", "Title", required=True, description="Product name.", normalizer="text"),
         FieldSpec("description", "Description", recommended=True, description="Selling description."),
-        FieldSpec("vendor", "Vendor", description="Brand or supplier."),
+        FieldSpec("vendor", "Vendor", description="Brand or supplier.", normalizer="vendor"),
         FieldSpec("product_type", "Product type", description="Category or product type."),
         FieldSpec("tags", "Tags", type="list_str", description="Search/category tags."),
         FieldSpec("price", "Price", type="decimal", required=True, description="Selling price.", normalizer="price"),
@@ -155,12 +159,13 @@ FINANCE = VerticalConfig(
     record_noun="invoice",
     dedupe_key="invoice_number",
     sample_file="sample_invoice.txt",
+    real_sample_file="sample_invoice_public.pdf",
     ready=False,
     fields=(
         FieldSpec("invoice_number", "Invoice number", required=True, description="Vendor invoice number.", normalizer="text"),
-        FieldSpec("vendor", "Vendor", required=True, description="Supplier / payee.", normalizer="text"),
-        FieldSpec("invoice_date", "Invoice date", description="Issue date, ISO 8601."),
-        FieldSpec("due_date", "Due date", description="Payment due date, ISO 8601."),
+        FieldSpec("vendor", "Vendor", required=True, description="Supplier / payee.", normalizer="vendor"),
+        FieldSpec("invoice_date", "Invoice date", description="Issue date, ISO 8601.", normalizer="date"),
+        FieldSpec("due_date", "Due date", description="Payment due date, ISO 8601.", normalizer="date"),
         FieldSpec("currency", "Currency", recommended=True, description="ISO 4217 currency code.", normalizer="currency"),
         FieldSpec("subtotal", "Subtotal", type="decimal", description="Amount before tax.", normalizer="price"),
         FieldSpec("tax", "Tax", type="decimal", description="Tax amount.", normalizer="price"),
@@ -171,8 +176,11 @@ FINANCE = VerticalConfig(
     ),
     system_prompt=(
         "You extract vendor invoices. Return one record per invoice. "
-        "Use ISO 8601 dates. Amounts must be numbers, not formatted strings. "
-        "Do not invent tax, totals, or line items. If a value is absent, use null."
+        "Vendor means the organization issuing the invoice (for example "
+        "'Amazon Web Services'), not the bill-to customer, an attention line, "
+        "or the document title. Use ISO 8601 dates. Amounts must be numbers, "
+        "not formatted strings. Do not invent tax, totals, or line items. "
+        "If a value is absent, use null."
     ),
     export_columns=(
         ("Invoice Number", "invoice_number"),
@@ -196,6 +204,7 @@ LOGISTICS = VerticalConfig(
     record_noun="shipment",
     dedupe_key="shipment_id",
     sample_file="sample_shipment.txt",
+    real_sample_file="sample_bol_public.pdf",
     ready=False,
     fields=(
         FieldSpec("shipment_id", "Shipment ID", required=True, description="Carrier or internal shipment ID.", normalizer="text"),
@@ -203,16 +212,23 @@ LOGISTICS = VerticalConfig(
         FieldSpec("tracking_number", "Tracking number", description="Carrier tracking reference."),
         FieldSpec("origin", "Origin", description="Origin city/country."),
         FieldSpec("destination", "Destination", description="Destination city/country."),
-        FieldSpec("ship_date", "Ship date", description="ISO 8601 date."),
-        FieldSpec("delivery_date", "Delivery date", description="ISO 8601 date."),
+        FieldSpec("ship_date", "Ship date", description="ISO 8601 date.", normalizer="date"),
+        FieldSpec("delivery_date", "Delivery date", description="ISO 8601 date.", normalizer="date"),
         FieldSpec("weight_kg", "Weight (kg)", type="float", description="Gross weight in kg.", normalizer="weight_kg"),
         FieldSpec("pieces", "Pieces", type="int", description="Number of packages."),
         FieldSpec("incoterm", "Incoterm", description="e.g. DAP, FOB."),
         FieldSpec("service", "Service", description="Service level."),
     ),
     system_prompt=(
-        "You extract shipment records from logistics documents. Return one record per shipment. "
-        "Use ISO 8601 dates and numeric weights/pieces. Do not invent tracking numbers."
+        "You extract shipment records from bills of lading, packing lists and shipment confirmations. "
+        "Return exactly one record per shipment; do not create multiple records for the same BOL. "
+        "Mapping rules: shipment_id is the Bill of Lading Number / BOL number / shipment ID, "
+        "never a label such as 'COD Amount'. carrier is the transporter (for example "
+        "'Southeastern Freight Lines'), not the shipper or consignee. tracking_number is the "
+        "PRO number, tracking number or carrier reference. origin is the SHIP FROM location; "
+        "destination is the SHIP TO location. weight_kg is the total gross weight converted "
+        "to kilograms (1 lb = 0.453592 kg; for example, 1,240 lb = 562.45 kg). "
+        "pieces is the total package count. Use ISO 8601 dates. Do not invent values."
     ),
     export_columns=(
         ("Shipment ID", "shipment_id"),
@@ -236,12 +252,13 @@ HEALTHCARE = VerticalConfig(
     record_noun="claim line",
     dedupe_key="claim_number",
     sample_file="sample_claim.txt",
+    real_sample_file="sample_claim_public.pdf",
     ready=False,
     fields=(
         FieldSpec("claim_number", "Claim number", required=True, description="Payer claim reference.", normalizer="text"),
         FieldSpec("payer", "Payer", description="Insurance payer."),
         FieldSpec("provider", "Provider", description="Billing provider."),
-        FieldSpec("service_date", "Service date", description="ISO 8601 date."),
+        FieldSpec("service_date", "Service date", description="ISO 8601 date.", normalizer="date"),
         FieldSpec("member_id", "Member ID", description="Member identifier (no patient names).", normalizer="text"),
         FieldSpec("diagnosis_codes", "Diagnosis codes", type="list_str", description="ICD codes as printed."),
         FieldSpec("procedure_codes", "Procedure codes", type="list_str", description="CPT/HCPCS codes as printed."),

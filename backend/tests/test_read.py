@@ -15,6 +15,27 @@ def test_read_pdf_sample():
     assert meta["pages"] == 1
 
 
+def test_bundled_public_samples_are_readable():
+    invoice, _ = read_document(SAMPLE_DIR / "sample_invoice_public.pdf")
+    assert "Amazon Web Services Invoice" in invoice
+    assert "Northwind Trading Ltd" in invoice
+    assert "123456789012" in invoice
+
+    bol, _ = read_document(SAMPLE_DIR / "sample_bol_public.pdf")
+    assert "BILL OF LADING" in bol
+    assert "Northwind Supplies" in bol
+    assert "BOL-2026-00421" in bol
+
+    catalog, _ = read_document(SAMPLE_DIR / "sample_catalog_public.csv")
+    assert "| Handle | Title |" in catalog
+    assert "Clay Plant Pot" in catalog
+
+    claim, _ = read_document(SAMPLE_DIR / "sample_claim_public.pdf")
+    assert "claim_number:" in claim
+    assert "CLM-2026-9912" in claim
+    assert "CMS-1500" in claim or "HEALTH INSURANCE CLAIM" in claim
+
+
 def test_read_csv_to_markdown_table(tmp_path):
     path = tmp_path / "products.csv"
     with path.open("w", newline="", encoding="utf-8") as handle:

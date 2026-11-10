@@ -28,6 +28,20 @@ def test_finance_total_mismatch_warns():
     assert any(w.code == "total_mismatch" for w in warnings)
 
 
+def test_finance_due_date_before_invoice_date_warns():
+    records = [
+        {
+            "invoice_number": "INV-1",
+            "vendor": "Acme",
+            "invoice_date": "2026-11-10",
+            "due_date": "2026-11-01",
+            "total": "10.00",
+        }
+    ]
+    warnings = validate_records(records, FINANCE)
+    assert any(w.code == "due_before_invoice" for w in warnings)
+
+
 def test_clean_record_is_ok():
     records = [
         {

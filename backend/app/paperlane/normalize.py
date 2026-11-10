@@ -8,8 +8,11 @@ model can stay strict and the CSV stays importable.
 from __future__ import annotations
 
 import re
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
+
+from dateutil import parser as date_parser
 
 from app.paperlane.verticals import FieldSpec, VerticalConfig
 
@@ -64,6 +67,40 @@ def clean_text(value: Any) -> str | None:
         return None
     text = re.sub(r"\s+", " ", str(value)).strip()
     return text or None
+
+
+def clean_vendor(value: Any) -> str | None:
+    """Strip common invoice-address noise from a vendor name."""
+    text = clean_text(value)
+    if not text:
+        return None
+    text = re.sub(
+        r"^(attn|attention|bill\s*to|invoice\s*from|from)\s*[:\-]\s*",
+        "",
+        text,
+        flags=re.IGNORECASE,
+    )
+    text = re.sub(r"\s+(invoice|bill)$", "", text, flags=re.IGNORECASE)
+    return text.strip() or None
+
+
+def parse_date(value: Any) -> str | None:
+    """Normalize common document dates to ISO 8601 (YYYY-MM-DD).
+
+    Falls back to cleaned text when the date is ambiguous or unparseable, so a
+    human can still review it instead of losing the value.
+    """
+    if value is None or value == "":
+        return None
+    if isinstance(value, datetime):
+        return value.date().isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    raw = str(value).strip()
+    try:
+        return date_parser.parse(raw, fuzzy=True).date().isoformat()
+    except (ValueError, OverflowError, TypeError):
+        return clean_text(raw)
 
 
 def parse_decimal(value: Any) -> Decimal | None:
@@ -232,6 +269,10 @@ def normalize_value(value: Any, field: FieldSpec) -> Any:
         return parse_weight_kg(value)
     if field.normalizer == "dimension_cm":
         return parse_dimension_cm(value)
+    if field.normalizer == "date":
+        return parse_date(value)
+    if field.normalizer == "vendor":
+        return clean_vendor(value)
     return clean_text(value)
 
 
@@ -247,7 +288,18 @@ COMMON_ALIASES = {
     "invoice_no": "invoice_number",
     "invoice_id": "invoice_number",
     "shipment": "shipment_id",
+    "bol_number": "shipment_id",
+    "bill_of_lading_number": "shipment_id",
+    "bl_number": "shipment_id",
     "tracking": "tracking_number",
+    "tracking_no": "tracking_number",
+    "pro_number": "tracking_number",
+    "total_weight": "weight_kg",
+    "gross_weight": "weight_kg",
+    "package_count": "pieces",
+    "no_of_pieces": "pieces",
+    "ship_from": "origin",
+    "ship_to": "destination",
     "total_amount": "total",
     "grand_total": "total",
     "claim_id": "claim_number",
@@ -274,6 +326,17 @@ def _canonical_key(key: str, config: VerticalConfig) -> str:
 
 def normalize_record(raw: dict[str, Any], config: VerticalConfig) -> dict[str, Any]:
     """Map common aliases and normalize every configured field."""
+    # Logistics models often put the BOL number in a separate key and use a
+    # header label as shipment_id. Prefer the real BOL number when that happens.
+    if config.id == "logistics":
+        bol = next(
+            (value for key, value in raw.items() if _key(key) in {"bol_number", "bill_of_lading_number", "bl_number"}),
+            None,
+        )
+        current = next((value for key, value in raw.items() if _key(key) == "shipment_id"), None)
+        if bol and (not current or any(word in str(current).lower() for word in ("cod", "amount", "lading"))):
+            raw = {**raw, "shipment_id": bol}
+
     data: dict[str, Any] = {}
     for key, value in raw.items():
         data[_canonical_key(str(key), config)] = value

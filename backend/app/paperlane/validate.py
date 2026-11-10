@@ -6,6 +6,7 @@ can review before exporting, which is how document workflows actually operate.
 
 from __future__ import annotations
 
+from datetime import date
 from decimal import Decimal
 from typing import Any
 
@@ -114,6 +115,22 @@ def validate_records(records: list[dict[str, Any]], config: VerticalConfig) -> l
                             record_key=key,
                         )
                     )
+
+            invoice_date = record.get("invoice_date")
+            due_date = record.get("due_date")
+            if isinstance(invoice_date, str) and isinstance(due_date, str):
+                try:
+                    if date.fromisoformat(due_date) < date.fromisoformat(invoice_date):
+                        warnings.append(
+                            WarningItem(
+                                code="due_before_invoice",
+                                message="Due date is earlier than the invoice date.",
+                                severity="warning",
+                                record_key=key,
+                            )
+                        )
+                except ValueError:
+                    pass
 
         elif config.id == "logistics":
             weight = _decimal(record.get("weight_kg"))

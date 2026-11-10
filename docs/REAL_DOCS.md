@@ -5,6 +5,13 @@ Two different jobs:
 1. **Demo** — 3–5 documents per vertical that look believable in a screen recording.
 2. **Eval** — 20+ documents with known answers so you can report field accuracy.
 
+Paperlane already bundles public demo samples for every vertical:
+
+- `sample_catalog_public.csv` — Shopify's public dummy product catalog
+- `sample_invoice_public.pdf` — redacted AWS invoice from invoice2data fixtures
+- `sample_bol_public.pdf` — synthesized shipment on the public VICS bill-of-lading template
+- `sample_claim_public.pdf` — synthetic administrative claim on the public CMS-1500 form
+
 Do not use real customer documents in the public demo. Use **public templates, public datasets, or synthetic data with realistic layouts**. Keep private documents in a gitignored folder.
 
 ---
