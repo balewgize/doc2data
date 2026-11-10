@@ -18,6 +18,7 @@ export type Vertical = {
 export type Health = {
   status: string;
   provider: string;
+  model: string;
   verticals: string[];
   database: string;
   max_upload_mb: number;

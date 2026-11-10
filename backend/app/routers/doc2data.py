@@ -14,7 +14,13 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
-from app.core.config import DATABASE_PATH, MAX_UPLOAD_MB, resolved_provider
+from app.core.config import (
+    DATABASE_PATH,
+    MAX_UPLOAD_MB,
+    OLLAMA_MODEL,
+    OPENAI_MODEL,
+    resolved_provider,
+)
 from app.doc2data.export import export_csv
 from app.doc2data.extract import (
     ExtractionError,
@@ -152,9 +158,18 @@ def verticals() -> list[dict[str, object]]:
 
 @router.get("/health")
 def health() -> dict[str, object]:
+    provider = resolved_provider()
+    model = (
+        OLLAMA_MODEL
+        if provider == "ollama"
+        else OPENAI_MODEL
+        if provider == "openai"
+        else "mock"
+    )
     return {
         "status": "ok",
-        "provider": resolved_provider(),
+        "provider": provider,
+        "model": model,
         "verticals": list(VERTICALS),
         "database": str(DATABASE_PATH),
         "max_upload_mb": MAX_UPLOAD_MB,

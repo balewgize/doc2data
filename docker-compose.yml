@@ -17,6 +17,8 @@ services:
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
     ports:
       - "8000:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       # Hot reload: local edits under backend/app/ restart uvicorn --reload
       - ./backend/app:/app/app

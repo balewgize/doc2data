@@ -4,8 +4,8 @@ These files power the **Try the sample** and **Try public catalog / invoice / BO
 buttons.
 
 When `LLM_PROVIDER=mock`, the public-sample buttons load the bundled demo result in
-`real_results/<vertical>.json` so the demo works offline. Configure OpenAI or Ollama to
-run the original documents live.
+`real_results/<vertical>.json` so the demo works offline. Configure Ollama
+(`gemma3:1b`) or OpenAI to run the original documents live.
 
 | File | Type | Source / notes |
 |---|---|---|

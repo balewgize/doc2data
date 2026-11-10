@@ -177,6 +177,13 @@ export default function Home() {
 
   const loading = pending !== null;
   const databaseName = health?.database?.split("/").pop() ?? null;
+  const liveProvider = health?.provider === "ollama" || health?.provider === "openai";
+  const providerLabel =
+    health?.provider === "ollama"
+      ? "Ollama"
+      : health?.provider === "openai"
+        ? "OpenAI"
+        : null;
 
   const selected = useMemo(
     () => verticals.find((item) => item.id === vertical),
@@ -348,15 +355,19 @@ export default function Home() {
               <h1 id="page-title">Turn messy documents into validated records.</h1>
               <p>
                 A portfolio project: upload a supplier catalog, invoice, shipment note
-                or claim, extract the fields with an LLM (or the offline demo), catch
-                missing or conflicting data, and export a clean CSV. One engine, four
-                industry schemas.
+                or claim, extract the fields with an LLM (or the offline demo), correct
+                them in place, catch missing or conflicting data, and export a clean
+                CSV. One engine, four industry schemas.
               </p>
             </div>
             <dl className="specs" aria-label="Extraction environment">
               <div>
                 <dt>Provider</dt>
                 <dd>{health?.provider ?? "unavailable"}</dd>
+              </div>
+              <div>
+                <dt>Model</dt>
+                <dd>{health?.model ?? "unavailable"}</dd>
               </div>
               <div>
                 <dt>Database</dt>
@@ -488,7 +499,11 @@ export default function Home() {
                     type="button"
                     onClick={() => handleExtract(true, true)}
                     disabled={loading}
-                    title="Load a bundled result from a public sample, or re-extract it live with a configured provider"
+                    title={
+                      liveProvider
+                        ? `Run the public sample live with ${providerLabel}`
+                        : "Load a bundled result from a public sample, or configure Ollama or OpenAI to re-extract it live"
+                    }
                     className="btn btn--wide"
                   >
                     {realSampleLabel}
@@ -517,8 +532,9 @@ export default function Home() {
                 Extract needs a file. Either sample runs without one.
               </p>
               <p className="helpline">
-                Public samples are bundled with the project. They run offline in demo
-                mode; set OpenAI or Ollama to re-extract them live.
+                {liveProvider
+                  ? `Public samples run live with ${providerLabel}. Local extraction can take a minute.`
+                  : "Public samples are bundled with the project. They run offline in demo mode; set Ollama (gemma3:1b) or OpenAI to re-extract them live."}
               </p>
             </section>
 
@@ -532,8 +548,8 @@ export default function Home() {
                     <span className="step">3.</span> Review and export
                   </h2>
                   <p className="stage__sub">
-                    Inspect the extracted records, resolve validation notes, and export
-                    an import-ready CSV.
+                    Click any value to correct it. Review notes and the CSV update
+                    immediately.
                   </p>
                 </div>
                 {run && (
@@ -779,9 +795,9 @@ export default function Home() {
             <div className="band__col">
               <h2 id="about-title">About this project</h2>
               <p>
-                Doc2Data is a complete document-to-data
+                Doc2Data is a portfolio project: a complete document-to-data
                 workflow, from upload and LLM extraction through normalization,
-                validation and human review to CSV export.
+                validation and human-in-the-loop correction to CSV export.
               </p>
               <p>
                 The core is shared. Each industry adds a schema, a prompt and an export
@@ -790,7 +806,7 @@ export default function Home() {
               <ul className="tags">
                 {[
                   "schema validation",
-                  "human review",
+                  "inline correction",
                   "CSV export",
                   "provider-agnostic",
                   "public samples",
@@ -803,12 +819,13 @@ export default function Home() {
             <div className="band__col band__col--status">
               <h2>Scope and stack</h2>
               <p>
-                Single-user: FastAPI, Next.js and SQLite. Extraction
-                runs with OpenAI, Ollama, or a deterministic offline demo provider.
+                Single-user portfolio build: FastAPI, Next.js and SQLite. Extraction
+                runs with Ollama (gemma3:1b), OpenAI, or a deterministic offline demo
+                provider.
               </p>
               <p>
-                Public samples are bundled for reproducible demos. No auth, billing,
-                job queue or managed storage yet. Those are production concerns.
+                Public samples are bundled for reproducible demos. Edits are saved in
+                place. No auth, billing, job queue or managed storage yet.
               </p>
               <p>
                 <a

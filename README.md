@@ -29,7 +29,7 @@ Doc2Data is the workflow layer:
 3. Extract structured fields with an LLM (or the offline mock).
 4. Normalize units, currencies, prices and dimensions.
 5. Validate required fields, duplicates, totals and cross-field rules.
-6. Review the exceptions in a human-in-the-loop screen.
+6. Review and correct exceptions in a human-in-the-loop screen; edits are re-validated.
 7. Export Shopify CSV or a generic industry CSV.
 
 The core pipeline is shared. Adding an industry means adding a schema, a prompt and an
@@ -60,8 +60,8 @@ pipeline. E-commerce is the reference implementation.
 
 The default provider is `mock`, a deterministic parser for the synthetic samples. The
 public-sample buttons also work offline by loading bundled demo results from
-`sample_data/real_results/`. Set `LLM_PROVIDER=openai` or `LLM_PROVIDER=ollama` to run
-the original documents live.
+`sample_data/real_results/`. Set `LLM_PROVIDER=ollama` and `OLLAMA_MODEL=gemma3:1b`
+(or `LLM_PROVIDER=openai`) to run the original documents live.
 
 ## Real documents for demos and evals
 
@@ -119,16 +119,25 @@ OPENAI_MODEL=gpt-4o-mini
 **Ollama (local)**
 
 ```bash
-ollama pull llama3.2
+ollama pull gemma3:1b
 ```
 
 ```env
 LLM_PROVIDER=ollama
 OLLAMA_BASE_URL=http://localhost:11434/v1
-OLLAMA_MODEL=llama3.2
+OLLAMA_MODEL=gemma3:1b
 ```
 
-In Docker, point `OLLAMA_BASE_URL` at `http://host.docker.internal:11434/v1`.
+In Docker, point `OLLAMA_BASE_URL` at `http://host.docker.internal:11434/v1`. The
+compose file adds the `host.docker.internal:host-gateway` alias so Docker on Linux can
+reach the host Ollama.
+
+Ollama listens on `127.0.0.1` by default on Linux. Either expose it on all interfaces
+(`OLLAMA_HOST=0.0.0.0:11434` in the Ollama service) or run the local bridge:
+
+```bash
+make ollama-proxy
+```
 
 The bundled public samples are a Shopify catalog, AWS invoice, VICS BOL and CMS-1500
 claim. The invoice and BOL were verified with `gemma3:1b` locally; a frontier model
@@ -184,7 +193,7 @@ Key modules:
 | GET | `/api/doc2data/runs/{id}` | Full run + records + warnings |
 | PATCH | `/api/doc2data/runs/{id}/records/{index}` | Edit one field, then re-normalize and re-validate |
 | GET | `/api/doc2data/runs/{id}/export.csv` | Download CSV |
-| GET | `/api/doc2data/health` | Provider, verticals, database |
+| GET | `/api/doc2data/health` | Provider, model, verticals, database |
 
 ## Adding an industry
 
@@ -227,7 +236,8 @@ make check       # backend tests + frontend production build
   still depends on the model.
 - SQLite is single-instance. Production needs Postgres/Supabase, object storage and a job queue.
 - No auth, workspaces or billing yet.
-- LLM output is validated, not guaranteed. The review screen is the control.
+- Inline edits overwrite the run in place; there is no correction-history ledger yet.
+- LLM output is validated, not guaranteed. The review table is the control.
 
 ## Roadmap
 

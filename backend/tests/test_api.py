@@ -16,6 +16,7 @@ def test_verticals_and_health():
         health = client.get("/api/doc2data/health")
         assert health.status_code == 200
         assert health.json()["provider"] == "mock"
+        assert health.json()["model"] == "mock"
 
 
 def test_sample_extraction_and_export():
