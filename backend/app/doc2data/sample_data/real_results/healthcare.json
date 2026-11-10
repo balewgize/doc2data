@@ -1,0 +1,21 @@
+{
+  "source": "sample_claim_public.pdf",
+  "recorded_with": "bundled demo",
+  "pages": 2,
+  "source_chars": 661,
+  "chunks": 1,
+  "records": [
+    {
+      "claim_number": "CLM-2026-9912",
+      "payer": "Acme Health",
+      "provider": "City Clinic",
+      "service_date": "2026-10-21",
+      "member_id": "M-44821",
+      "diagnosis_codes": ["E11.9", "I10"],
+      "procedure_codes": ["99213", "83036"],
+      "billed_amount": 420.0,
+      "allowed_amount": 310.0,
+      "patient_responsibility": 60.0
+    }
+  ]
+}

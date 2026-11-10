@@ -25,10 +25,11 @@ export async function getHealth(): Promise<Health> {
   return response.json() as Promise<Health>;
 }
 
-export async function getRuns(): Promise<RunSummary[]> {
-  const response = await fetch(`${API_URL}/api/doc2data/runs`, {
-    cache: "no-store",
-  });
+export async function getRuns(limit = 6): Promise<RunSummary[]> {
+  const response = await fetch(
+    `${API_URL}/api/doc2data/runs?limit=${limit}`,
+    { cache: "no-store" }
+  );
   if (!response.ok) throw new Error(await errorMessage(response));
   return response.json() as Promise<RunSummary[]>;
 }

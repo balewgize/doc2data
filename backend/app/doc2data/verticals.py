@@ -160,7 +160,6 @@ FINANCE = VerticalConfig(
     dedupe_key="invoice_number",
     sample_file="sample_invoice.txt",
     real_sample_file="sample_invoice_public.pdf",
-    ready=False,
     fields=(
         FieldSpec("invoice_number", "Invoice number", required=True, description="Vendor invoice number.", normalizer="text"),
         FieldSpec("vendor", "Vendor", required=True, description="Supplier / payee.", normalizer="vendor"),
@@ -205,7 +204,6 @@ LOGISTICS = VerticalConfig(
     dedupe_key="shipment_id",
     sample_file="sample_shipment.txt",
     real_sample_file="sample_bol_public.pdf",
-    ready=False,
     fields=(
         FieldSpec("shipment_id", "Shipment ID", required=True, description="Carrier or internal shipment ID.", normalizer="text"),
         FieldSpec("carrier", "Carrier", description="Carrier name."),
@@ -253,7 +251,6 @@ HEALTHCARE = VerticalConfig(
     dedupe_key="claim_number",
     sample_file="sample_claim.txt",
     real_sample_file="sample_claim_public.pdf",
-    ready=False,
     fields=(
         FieldSpec("claim_number", "Claim number", required=True, description="Payer claim reference.", normalizer="text"),
         FieldSpec("payer", "Payer", description="Insurance payer."),

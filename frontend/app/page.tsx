@@ -75,7 +75,6 @@ export default function Home() {
   const [runsError, setRunsError] = useState<string | null>(null);
 
   const loading = pending !== null;
-  const provider = health?.provider ?? null;
   const databaseName = health?.database?.split("/").pop() ?? null;
 
   const selected = useMemo(
@@ -186,17 +185,16 @@ export default function Home() {
     return [...run.warnings].sort((a, b) => order[a.severity] - order[b.severity]);
   }, [run]);
 
-  const canUseReal = provider === "openai" || provider === "ollama";
   const realSampleLabel =
     selected?.id === "ecommerce"
-      ? "Try real catalog"
+      ? "Try public catalog"
       : selected?.id === "finance"
-        ? "Try real invoice"
+        ? "Try public invoice"
         : selected?.id === "logistics"
-          ? "Try real BOL"
+          ? "Try public BOL"
           : selected?.id === "healthcare"
-            ? "Try real claim"
-            : "Try real doc";
+            ? "Try public claim"
+            : "Try public sample";
 
   return (
     <div className="app">
@@ -215,14 +213,24 @@ export default function Home() {
               <span className="brand__line">Documents in. Clean data out.</span>
             </span>
           </div>
-          <a
-            className="btn"
-            href={`${API_URL}/docs`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            API docs
-          </a>
+          <div className="topbar__links">
+            <a
+              className="btn"
+              href="https://github.com/balewgize/doc2data"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Source
+            </a>
+            <a
+              className="btn"
+              href={`${API_URL}/docs`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              API docs
+            </a>
+          </div>
         </div>
       </header>
 
@@ -232,9 +240,10 @@ export default function Home() {
             <div className="intro__text">
               <h1 id="page-title">Turn messy documents into validated records.</h1>
               <p>
-                Upload a supplier catalog, invoice, shipment note or claim. Doc2Data
-                extracts the fields, flags missing or conflicting data, and exports a
-                clean CSV. One engine, several industries.
+                Upload a supplier catalog, invoice,
+                shipment note or claim, extract the fields with an LLM (or the offline
+                demo), catch missing or conflicting data, and export a clean CSV. One
+                engine, four industry schemas.
               </p>
             </div>
             <dl className="specs" aria-label="Extraction environment">
@@ -284,9 +293,6 @@ export default function Home() {
                       className="choice"
                     >
                       <span className="choice__label">{item.label}</span>
-                      <span className="choice__tag">
-                        {item.ready ? "live" : "beta"}
-                      </span>
                       <span className="choice__desc">{item.description}</span>
                     </button>
                   );
@@ -356,7 +362,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => handleExtract(false)}
-                  disabled={loading}
+                  disabled={loading || !file}
                   className="btn btn--primary"
                   aria-describedby="extract-help"
                 >
@@ -374,12 +380,8 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => handleExtract(true, true)}
-                    disabled={loading || !canUseReal}
-                    title={
-                      canUseReal
-                        ? "Run a public real-world document"
-                        : "Set LLM_PROVIDER=openai or ollama in .env to run real samples"
-                    }
+                    disabled={loading}
+                    title="Load a bundled result from a public sample, or re-extract it live with a configured provider"
                     className="btn btn--wide"
                   >
                     {realSampleLabel}
@@ -405,12 +407,11 @@ export default function Home() {
               )}
 
               <p className="helpline helpline--reserved" id="extract-help">
-                Extract needs a file. The sample runs without one.
+                Extract needs a file. Either sample runs without one.
               </p>
               <p className="helpline">
-                Real samples use public documents (Shopify catalog, AWS invoice, VICS
-                BOL, CMS-1500). They need OpenAI or Ollama. The offline mock only parses
-                the synthetic samples.
+                Public samples are bundled with the project. They run offline in demo
+                mode; set OpenAI or Ollama to re-extract them live.
               </p>
             </section>
 
@@ -424,8 +425,8 @@ export default function Home() {
                     <span className="step">3.</span> Review and export
                   </h2>
                   <p className="stage__sub">
-                    Validate before anything reaches Shopify, your ledger, or a
-                    warehouse system.
+                    Inspect the extracted records, resolve validation notes, and export
+                    an import-ready CSV.
                   </p>
                 </div>
                 {run && (
@@ -479,6 +480,13 @@ export default function Home() {
                     <span className="runhead__meta">{run.provider}</span>
                     <span className="runhead__meta">{formatDate(run.created_at)}</span>
                   </div>
+
+                  {run.meta.public_sample === true && (
+                    <p className="helpline">
+                      Bundled demo result for a public sample. Configure OpenAI or
+                      Ollama to run the document live.
+                    </p>
+                  )}
 
                   <dl className="figures">
                     {[
@@ -650,35 +658,51 @@ export default function Home() {
           </section>
         </div>
 
-        <section className="band" aria-labelledby="why-title">
+        <section className="band" aria-labelledby="about-title">
           <div className="container band__grid">
             <div className="band__col">
-              <h2 id="why-title">Why this exists</h2>
+              <h2 id="about-title">About this project</h2>
               <p>
-                Companies pay people to retype supplier documents into Shopify, ERPs
-                and ledgers. That is the workflow this product replaces.
+                Doc2Data is a complete document-to-data
+                workflow, from upload and LLM extraction through normalization,
+                validation and human review to CSV export.
               </p>
               <p>
                 The core is shared. Each industry adds a schema, a prompt and an export
                 mapping, not a new app.
               </p>
               <ul className="tags">
-                {["schema validation", "human review", "CSV export"].map((tag) => (
+                {[
+                  "schema validation",
+                  "human review",
+                  "CSV export",
+                  "provider-agnostic",
+                  "public samples",
+                  "run history",
+                ].map((tag) => (
                   <li key={tag}>{tag}</li>
                 ))}
               </ul>
             </div>
             <div className="band__col band__col--status">
-              <h2>MVP status</h2>
+              <h2>Scope and stack</h2>
               <p>
-                E-commerce is live. Finance, logistics and healthcare share the same
-                engine and are marked beta until their prompts are tuned on real
-                documents.
+                Single-user: FastAPI, Next.js and SQLite. Extraction
+                runs with OpenAI, Ollama, or a deterministic offline demo provider.
               </p>
               <p>
-                Offline demo uses the deterministic mock provider. Set{" "}
-                <code>LLM_PROVIDER=openai</code> or <code>ollama</code> for real
-                extraction, including the bundled public samples.
+                Public samples are bundled for reproducible demos. No auth, billing,
+                job queue or managed storage yet. Those are production concerns.
+              </p>
+              <p>
+                <a
+                  className="band__link"
+                  href="https://github.com/balewgize/doc2data"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  View the source on GitHub
+                </a>
               </p>
             </div>
           </div>
@@ -687,8 +711,17 @@ export default function Home() {
 
       <footer className="footer">
         <div className="container footer__in">
-          <p>Doc2Data. A document-to-data engine for real back-office workflows.</p>
-          <p>Built on FastAPI + Next.js. SQLite for the MVP.</p>
+          <p>Doc2Data. A portfolio project by Alemnew Marie.</p>
+          <p>
+            FastAPI, Next.js and SQLite.{" "}
+            <a
+              href="https://github.com/balewgize/doc2data"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Source on GitHub
+            </a>
+          </p>
         </div>
       </footer>
     </div>

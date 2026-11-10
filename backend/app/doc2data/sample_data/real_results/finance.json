@@ -1,0 +1,27 @@
+{
+  "source": "sample_invoice_public.pdf",
+  "recorded_with": "gemma3:1b (curated)",
+  "pages": 1,
+  "source_chars": 1857,
+  "chunks": 1,
+  "records": [
+    {
+      "invoice_number": "42183017",
+      "vendor": "Amazon Web Services",
+      "invoice_date": "2014-08-03",
+      "due_date": null,
+      "currency": "USD",
+      "subtotal": 4.11,
+      "tax": 0.0,
+      "total": 4.11,
+      "po_number": null,
+      "payment_terms": null,
+      "line_items": [
+        "AWS Data Transfer",
+        "Amazon Elastic Compute Cloud",
+        "Amazon Glacier",
+        "Amazon Simple Storage Service"
+      ]
+    }
+  ]
+}

@@ -9,6 +9,8 @@ engine, multiple industry configurations.
 Built on [fastapi-nextjs-starter](https://github.com/balewgize/fastapi-nextjs-starter):
 FastAPI + Next.js, Dockerized, Vercel-ready.
 
+This is a portfolio project: an end-to-end workflow demo, not a production service.
+
 ![Doc2Data review screen](docs/screenshot.png)
 
 ---
@@ -33,17 +35,17 @@ Doc2Data is the workflow layer:
 The core pipeline is shared. Adding an industry means adding a schema, a prompt and an
 export mapping — not a new app.
 
-## Current MVP
+## Verticals
 
 | Industry | Status | Output |
 |---|---|---|
 | E-commerce catalog | **Live** | Shopify product import CSV |
-| Finance documents | Beta | Generic invoice CSV |
-| Logistics documents | Beta | Generic shipment CSV |
-| Healthcare claims | Beta | Generic claim-line CSV (administrative only) |
+| Finance documents | **Live** | Generic invoice CSV |
+| Logistics documents | **Live** | Generic shipment CSV |
+| Healthcare claims | **Live** | Generic claim-line CSV (administrative only) |
 
-"Beta" means the config and pipeline work, but the prompts have not been tuned on a large
-set of real documents yet. E-commerce is the reference vertical.
+All four verticals share the same extraction, normalization, validation and export
+pipeline. E-commerce is the reference implementation.
 
 ## Demo flow
 
@@ -51,9 +53,13 @@ set of real documents yet. E-commerce is the reference vertical.
 2. Click **Try the sample**.
 3. See 3 records, a duplicate warning and a missing-price error.
 4. Download the Shopify CSV.
+5. Switch verticals and click **Try public invoice / BOL / claim** (or **catalog**) to
+   load a bundled result from a real public document.
 
-The default provider is `mock`, a deterministic parser for the bundled samples. It works
-offline with no API key. Real PDFs need OpenAI or Ollama.
+The default provider is `mock`, a deterministic parser for the synthetic samples. The
+public-sample buttons also work offline by loading bundled demo results from
+`sample_data/real_results/`. Set `LLM_PROVIDER=openai` or `LLM_PROVIDER=ollama` to run
+the original documents live.
 
 ## Real documents for demos and evals
 
@@ -211,10 +217,11 @@ make check       # backend tests + frontend production build
 
 ## Current limitations
 
-- Scanned PDFs need OCR before upload; the MVP reads embedded text only.
+- Scanned PDFs need OCR before upload; the app reads embedded text only.
 - E-commerce models one record per SKU; variant axes are not split yet.
 - Shopify export creates draft products; images are referenced, not uploaded.
-- Finance, logistics and healthcare prompts are beta and need real-document tuning.
+- Prompts are tuned on the bundled public samples; accuracy on arbitrary documents
+  still depends on the model.
 - SQLite is single-instance. Production needs Postgres/Supabase, object storage and a job queue.
 - No auth, workspaces or billing yet.
 - LLM output is validated, not guaranteed. The review screen is the control.

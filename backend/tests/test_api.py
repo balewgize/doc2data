@@ -9,6 +9,7 @@ def test_verticals_and_health():
         assert response.status_code == 200
         verticals = response.json()
         assert {v["id"] for v in verticals} == {"ecommerce", "finance", "logistics", "healthcare"}
+        assert all(v["ready"] for v in verticals)
 
         health = client.get("/api/doc2data/health")
         assert health.status_code == 200
@@ -41,12 +42,17 @@ def test_unknown_vertical_is_rejected():
         assert response.status_code == 400
 
 
-def test_real_samples_are_bundled_but_need_a_real_provider():
+def test_public_samples_run_offline_with_recorded_results():
     with TestClient(app) as client:
         verticals = {v["id"]: v for v in client.get("/api/doc2data/verticals").json()}
         assert all(v["real_sample"] is True for v in verticals.values())
 
-        # Mock cannot parse the public real-world docs, so the API explains why.
-        response = client.post("/api/doc2data/extract/sample?vertical=finance&real=true")
-        assert response.status_code == 400
-        assert "LLM_PROVIDER=openai" in response.json()["detail"]
+        for vertical in verticals:
+            response = client.post(
+                f"/api/doc2data/extract/sample?vertical={vertical}&real=true"
+            )
+            assert response.status_code == 200, response.text
+            run = response.json()
+            assert run["records"]
+            assert run["provider"] == "demo"
+            assert run["meta"]["public_sample"] is True

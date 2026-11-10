@@ -1,0 +1,420 @@
+{
+  "source": "sample_catalog_public.csv",
+  "recorded_with": "bundled demo (derived from the public Shopify catalog)",
+  "pages": null,
+  "source_chars": 6510,
+  "chunks": 1,
+  "records": [
+    {
+      "sku": "clay-plant-pot-regular",
+      "title": "Clay Plant Pot (Regular)",
+      "description": "Classic blown clay pot for plants",
+      "vendor": "Company 123",
+      "product_type": "Outdoor",
+      "tags": [
+        "Pot",
+        "Plants"
+      ],
+      "price": "9.99",
+      "compare_at_price": null,
+      "currency": "USD",
+      "weight_grams": null,
+      "image_urls": [
+        "https://burst.shopifycdn.com/photos/single-sprout-in-a-pot_925x.jpg"
+      ],
+      "seo_title": null,
+      "seo_description": null
+    },
+    {
+      "sku": "clay-plant-pot-large",
+      "title": "Clay Plant Pot (Large)",
+      "description": "Classic blown clay pot for plants",
+      "vendor": "Company 123",
+      "product_type": "Outdoor",
+      "tags": [
+        "Pot",
+        "Plants"
+      ],
+      "price": "15.99",
+      "compare_at_price": null,
+      "currency": "USD",
+      "weight_grams": null,
+      "image_urls": [
+        "https://burst.shopifycdn.com/photos/pot-with-a-single-sprout_925x.jpg"
+      ],
+      "seo_title": null,
+      "seo_description": null
+    },
+    {
+      "sku": "copper-light",
+      "title": "Copper Light",
+      "description": "Stylish copper bedside light",
+      "vendor": "Company 123",
+      "product_type": "Indoor",
+      "tags": [
+        "Copper",
+        "Bedroom"
+      ],
+      "price": "59.99",
+      "compare_at_price": "75",
+      "currency": "USD",
+      "weight_grams": null,
+      "image_urls": [
+        "https://burst.shopifycdn.com/photos/copper-light-in-bedroom_925x.jpg"
+      ],
+      "seo_title": null,
+      "seo_description": null
+    },
+    {
+      "sku": "cream-sofa",
+      "title": "Cream Sofa",
+      "description": "Comfortable cream sofa with wooden base",
+      "vendor": "Company 123",
+      "product_type": "Indoor",
+      "tags": [
+        "Couch",
+        "Wood"
+      ],
+      "price": "500",
+      "compare_at_price": "750",
+      "currency": "USD",
+      "weight_grams": null,
+      "image_urls": [
+        "https://burst.shopifycdn.com/photos/condominium-interior-livingroom_925x.jpg"
+      ],
+      "seo_title": null,
+      "seo_description": null
+    },
+    {
+      "sku": "antique-drawers",
+      "title": "Antique Drawers",
+      "description": "Antique wooden chest of drawers",
+      "vendor": "Company 123",
+      "product_type": "Indoor",
+      "tags": [
+        "Antique",
+        "Bedroom"
+      ],
+      "price": "250",
+      "compare_at_price": "300",
+      "currency": "USD",
+      "weight_grams": null,
+      "image_urls": [
+        "https://burst.shopifycdn.com/photos/babys-room_925x.jpg"
+      ],
+      "seo_title": null,
+      "seo_description": null
+    },
+    {
+      "sku": "white-bed-clothes",
+      "title": "White Bed Clothes",
+      "description": "Sleek white bed clothes",
+      "vendor": "Company 123",
+      "product_type": "Indoor",
+      "tags": [
+        "Bed"
+      ],
+      "price": "29.99",
+      "compare_at_price": "35",
+      "currency": "USD",
+      "weight_grams": null,
+      "image_urls": [
+        "https://burst.shopifycdn.com/photos/bright-hotel-room-bed_925x.jpg"
+      ],
+      "seo_title": null,
+      "seo_description": null
+    },
+    {
+      "sku": "pink-armchair",
+      "title": "Pink Armchair",
+      "description": "Stylish pink armchair",
+      "vendor": "Company 123",
+      "product_type": "Indoor",
+      "tags": [
+        "Chair"
+      ],
+      "price": "750",
+      "compare_at_price": null,
+      "currency": "USD",
+      "weight_grams": null,
+      "image_urls": [
+        "https://burst.shopifycdn.com/photos/soft-pink-cushioned-armchair-in-stately-salon_925x.jpg"
+      ],
+      "seo_title": null,
+      "seo_description": null
+    },
+    {
+      "sku": "wooden-outdoor-table",
+      "title": "Wooden Outdoor Table",
+      "description": "Chic wooden outdoor garden table",
+      "vendor": "Rustic LTD",
+      "product_type": "Outdoor",
+      "tags": [
+        "Wood",
+        "Garden"
+      ],
+      "price": "99.99",
+      "compare_at_price": null,
+      "currency": "USD",
+      "weight_grams": null,
+      "image_urls": [
+        "https://burst.shopifycdn.com/photos/cafe-patio_925x.jpg"
+      ],
+      "seo_title": null,
+      "seo_description": null
+    },
+    {
+      "sku": "brown-throw-pillows",
+      "title": "Brown Throw Pillows",
+      "description": "Stylish brown throw pillows",
+      "vendor": "Rustic LTD",
+      "product_type": "Indoor",
+      "tags": [
+        "Pillows"
+      ],
+      "price": "19.99",
+      "compare_at_price": "25.99",
+      "currency": "USD",
+      "weight_grams": null,
+      "image_urls": [
+        "https://burst.shopifycdn.com/photos/bedroom-bed-with-brown-throw-pillows_925x.jpg"
+      ],
+      "seo_title": null,
+      "seo_description": null
+    },
+    {
+      "sku": "white-ceramic-pot",
+      "title": "White Ceramic Pot",
+      "description": "Homemade white ceramic flower pot",
+      "vendor": "Rustic LTD",
+      "product_type": "Indoor",
+      "tags": [
+        "Pot",
+        "Plants"
+      ],
+      "price": "15.99",
+      "compare_at_price": "30",
+      "currency": "USD",
+      "weight_grams": null,
+      "image_urls": [
+        "https://burst.shopifycdn.com/photos/house-plant-in-white-pot_925x.jpg"
+      ],
+      "seo_title": null,
+      "seo_description": null
+    },
+    {
+      "sku": "yellow-watering-can",
+      "title": "Yellow watering can",
+      "description": "Vintage vibrant watering can",
+      "vendor": "Rustic LTD",
+      "product_type": "Outdoor",
+      "tags": [
+        "Plants"
+      ],
+      "price": "40.99",
+      "compare_at_price": "50",
+      "currency": "USD",
+      "weight_grams": null,
+      "image_urls": [
+        "https://burst.shopifycdn.com/photos/flowers-in-yellow-watering-can_925x.jpg"
+      ],
+      "seo_title": null,
+      "seo_description": null
+    },
+    {
+      "sku": "gardening-hand-trowel",
+      "title": "Gardening hand trowel",
+      "description": "Metal gardening hand trowel with wooden handle",
+      "vendor": "Rustic LTD",
+      "product_type": "Outdoor",
+      "tags": [
+        "Plants"
+      ],
+      "price": "10.99",
+      "compare_at_price": "25",
+      "currency": "USD",
+      "weight_grams": null,
+      "image_urls": [
+        "https://burst.shopifycdn.com/photos/spring-gardening-set-up_925x.jpg"
+      ],
+      "seo_title": null,
+      "seo_description": null
+    },
+    {
+      "sku": "biodegradable-cardboard-pots",
+      "title": "Biodegradable cardboard pots",
+      "description": "Biodegradable outdoor cardboard pots",
+      "vendor": "Rustic LTD",
+      "product_type": "Outdoor",
+      "tags": [
+        "Garden",
+        "Plants"
+      ],
+      "price": "10",
+      "compare_at_price": null,
+      "currency": "USD",
+      "weight_grams": null,
+      "image_urls": [
+        "https://burst.shopifycdn.com/photos/potted-seeds_925x.jpg"
+      ],
+      "seo_title": null,
+      "seo_description": null
+    },
+    {
+      "sku": "grey-sofa",
+      "title": "Grey Sofa",
+      "description": "Large four seater grey sofa",
+      "vendor": "Rustic LTD",
+      "product_type": "Indoor",
+      "tags": [
+        "Sofa"
+      ],
+      "price": "29.99",
+      "compare_at_price": "35",
+      "currency": "USD",
+      "weight_grams": null,
+      "image_urls": [
+        "https://burst.shopifycdn.com/photos/large-grey-sofa-by-brick-wall_925x.jpg"
+      ],
+      "seo_title": null,
+      "seo_description": null
+    },
+    {
+      "sku": "wooden-outdoor-slats",
+      "title": "Wooden outdoor slats",
+      "description": "Wooden outdoor fencing slats",
+      "vendor": "Rustic LTD",
+      "product_type": "Outdoor",
+      "tags": [
+        "Wood",
+        "Garden"
+      ],
+      "price": "25.99",
+      "compare_at_price": "35",
+      "currency": "USD",
+      "weight_grams": null,
+      "image_urls": [
+        "https://burst.shopifycdn.com/photos/house-plant-on-wooden-slat-wall_925x.jpg"
+      ],
+      "seo_title": null,
+      "seo_description": null
+    },
+    {
+      "sku": "wooden-fence",
+      "title": "Wooden Fence",
+      "description": "Wooden garden fence",
+      "vendor": "Rustic LTD",
+      "product_type": "Outdoor",
+      "tags": [
+        "Garden",
+        "Wood"
+      ],
+      "price": "200",
+      "compare_at_price": "300",
+      "currency": "USD",
+      "weight_grams": null,
+      "image_urls": [
+        "https://burst.shopifycdn.com/photos/picket-fence-flowers_925x.jpg"
+      ],
+      "seo_title": null,
+      "seo_description": null
+    },
+    {
+      "sku": "yellow-sofa",
+      "title": "Yellow Sofa",
+      "description": "Two seater yellow sofa with wooden legs",
+      "vendor": "Home Sweet Home",
+      "product_type": "Indoor",
+      "tags": [
+        "Sofa"
+      ],
+      "price": "99.99",
+      "compare_at_price": "150",
+      "currency": "USD",
+      "weight_grams": null,
+      "image_urls": [
+        "https://burst.shopifycdn.com/photos/yellow-couch-by-black-and-white-mural_925x.jpg"
+      ],
+      "seo_title": null,
+      "seo_description": null
+    },
+    {
+      "sku": "knitted-throw-pillows",
+      "title": "Knitted Throw Pillows",
+      "description": "Homemade knitted throw pillows in a variety of colors",
+      "vendor": "Home Sweet Home",
+      "product_type": "Indoor",
+      "tags": [
+        "Pillows"
+      ],
+      "price": "19.99",
+      "compare_at_price": "25.99",
+      "currency": "USD",
+      "weight_grams": null,
+      "image_urls": [
+        "https://burst.shopifycdn.com/photos/yellow-sofa-with-throw-pillows_925x.jpg"
+      ],
+      "seo_title": null,
+      "seo_description": null
+    },
+    {
+      "sku": "vanilla-candle",
+      "title": "Vanilla candle",
+      "description": "Vanilla scent candle in jar",
+      "vendor": "Home Sweet Home",
+      "product_type": "Indoor",
+      "tags": [
+        "Candle"
+      ],
+      "price": "15.99",
+      "compare_at_price": "30",
+      "currency": "USD",
+      "weight_grams": null,
+      "image_urls": [
+        "https://burst.shopifycdn.com/photos/diy-organic-candle_925x.jpg"
+      ],
+      "seo_title": null,
+      "seo_description": null
+    },
+    {
+      "sku": "black-bean-bag",
+      "title": "Black Beanbag",
+      "description": "Black leather beanbag",
+      "vendor": "Company 123",
+      "product_type": "Indoor",
+      "tags": [
+        "Black",
+        "Leather"
+      ],
+      "price": "69.99",
+      "compare_at_price": "80",
+      "currency": "USD",
+      "weight_grams": null,
+      "image_urls": [
+        "https://burst.shopifycdn.com/photos/comfortable-living-room-cat_925x.jpg"
+      ],
+      "seo_title": null,
+      "seo_description": null
+    },
+    {
+      "sku": "bedside-table",
+      "title": "Bedside Table",
+      "description": "Wooden bedside table",
+      "vendor": "Company 123",
+      "product_type": "Indoor",
+      "tags": [
+        "Wood",
+        "Bedroom"
+      ],
+      "price": "69.99",
+      "compare_at_price": "85",
+      "currency": "USD",
+      "weight_grams": null,
+      "image_urls": [
+        "https://burst.shopifycdn.com/photos/dark-wall-bedside-table_925x.jpg"
+      ],
+      "seo_title": null,
+      "seo_description": null
+    }
+  ]
+}

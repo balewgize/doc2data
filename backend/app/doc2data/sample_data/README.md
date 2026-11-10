@@ -1,6 +1,11 @@
 # Bundled sample documents
 
-These files power the **Try the sample** and **Try real invoice / BOL** buttons.
+These files power the **Try the sample** and **Try public catalog / invoice / BOL / claim**
+buttons.
+
+When `LLM_PROVIDER=mock`, the public-sample buttons load the bundled demo result in
+`real_results/<vertical>.json` so the demo works offline. Configure OpenAI or Ollama to
+run the original documents live.
 
 | File | Type | Source / notes |
 |---|---|---|
@@ -15,3 +20,8 @@ These files power the **Try the sample** and **Try real invoice / BOL** buttons.
 
 No customer or patient data is included. The public invoice/BOL samples are for
 layout and extraction demos only. Check the upstream licenses before redistributing.
+
+`real_results/` contains the offline demo records for those public samples. Each file is
+normalized and validated by the same pipeline as a live extraction. The catalog result is
+derived from the public Shopify CSV; the other results are curated from the bundled
+documents.

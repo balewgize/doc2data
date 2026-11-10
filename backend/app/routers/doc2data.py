@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 import tempfile
 import uuid
@@ -13,16 +14,24 @@ from fastapi.responses import Response
 
 from app.core.config import DATABASE_PATH, MAX_UPLOAD_MB, resolved_provider
 from app.doc2data.export import export_csv
-from app.doc2data.extract import ExtractionError, UnsupportedDocument, extract_document
+from app.doc2data.extract import (
+    ExtractionError,
+    ExtractionResult,
+    UnsupportedDocument,
+    extract_document,
+)
 from app.doc2data.llm import ProviderError
 from app.doc2data.models import Column, Run
+from app.doc2data.normalize import normalize_record
 from app.doc2data.storage import get_run, list_runs, save_run
+from app.doc2data.validate import validate_records
 from app.doc2data.verticals import VERTICALS
 
 router = APIRouter(prefix="/api/doc2data", tags=["doc2data"])
 
 ALLOWED_EXTENSIONS = {".pdf", ".xlsx", ".xlsm", ".csv", ".txt", ".md", ".json"}
 SAMPLE_DIR = Path(__file__).resolve().parent.parent / "doc2data" / "sample_data"
+REAL_RESULTS_DIR = SAMPLE_DIR / "real_results"
 
 
 def _config(vertical: str):
@@ -44,17 +53,7 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _run_document(path: Path, filename: str, vertical: str) -> Run:
-    config = _config(vertical)
-    try:
-        result = extract_document(path, filename, config)
-    except UnsupportedDocument as exc:
-        raise HTTPException(status_code=415, detail=str(exc)) from exc
-    except ExtractionError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-    except ProviderError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
-
+def _save_result(result: ExtractionResult, filename: str, config) -> Run:
     run = Run(
         id=_new_run_id(),
         created_at=_now(),
@@ -70,6 +69,54 @@ def _run_document(path: Path, filename: str, vertical: str) -> Run:
     )
     save_run(run)
     return run
+
+
+def _run_document(path: Path, filename: str, vertical: str) -> Run:
+    config = _config(vertical)
+    try:
+        result = extract_document(path, filename, config)
+    except UnsupportedDocument as exc:
+        raise HTTPException(status_code=415, detail=str(exc)) from exc
+    except ExtractionError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except ProviderError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    return _save_result(result, filename, config)
+
+
+def _bundled_real_sample(config) -> Run:
+    """Serve a recorded extraction when no LLM provider is configured.
+
+    The public samples are fixed files, so the portfolio demo can show the
+    review workflow without an API key. Configure OpenAI or Ollama to run them
+    live instead.
+    """
+    fixture_path = REAL_RESULTS_DIR / f"{config.id}.json"
+    if not fixture_path.exists():
+        raise HTTPException(
+            status_code=500,
+            detail=f"Bundled result missing for {config.label}.",
+        )
+
+    payload = json.loads(fixture_path.read_text(encoding="utf-8"))
+    records = [normalize_record(record, config) for record in payload.get("records", [])]
+    result = ExtractionResult(
+        records=records,
+        warnings=validate_records(records, config),
+        meta={
+            "filename": config.real_sample_file,
+            "provider": "demo",
+            "source_type": "bundled",
+            "pages": payload.get("pages"),
+            "source_chars": payload.get("source_chars", 0),
+            "chunks": payload.get("chunks", 1),
+            "elapsed_ms": 0,
+            "recorded_with": payload.get("recorded_with"),
+            "public_sample": True,
+        },
+    )
+    return _save_result(result, config.real_sample_file or fixture_path.name, config)
 
 
 @router.get("/verticals")
@@ -147,13 +194,7 @@ def extract_sample(vertical: str = "ecommerce", real: bool = False) -> Run:
                 detail=f"No real sample is bundled for {config.label}.",
             )
         if resolved_provider() == "mock":
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    "Real samples need a real extraction provider. "
-                    "Set LLM_PROVIDER=openai or LLM_PROVIDER=ollama."
-                ),
-            )
+            return _bundled_real_sample(config)
         sample = SAMPLE_DIR / config.real_sample_file
     else:
         sample = SAMPLE_DIR / config.sample_file

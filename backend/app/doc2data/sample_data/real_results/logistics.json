@@ -1,0 +1,22 @@
+{
+  "source": "sample_bol_public.pdf",
+  "recorded_with": "gemma3:1b",
+  "pages": 2,
+  "source_chars": 4183,
+  "chunks": 1,
+  "records": [
+    {
+      "shipment_id": "BOL-2026-00421",
+      "carrier": "Southeastern Freight Lines",
+      "tracking_number": "PRO-123456789",
+      "origin": "Atlanta, GA",
+      "destination": "Nashville, TN",
+      "ship_date": "2026-11-06",
+      "delivery_date": "2026-11-06",
+      "weight_kg": 562.45,
+      "pieces": 12,
+      "incoterm": "DAP",
+      "service": "LTL"
+    }
+  ]
+}

@@ -12,6 +12,10 @@ Doc2Data already bundles public demo samples for every vertical:
 - `sample_bol_public.pdf` — synthesized shipment on the public VICS bill-of-lading template
 - `sample_claim_public.pdf` — synthetic administrative claim on the public CMS-1500 form
 
+With the default `mock` provider, the UI serves a bundled demo result for each from
+`backend/app/doc2data/sample_data/real_results/`. Set OpenAI or Ollama to extract the
+original documents live.
+
 Do not use real customer documents in the public demo. Use **public templates, public datasets, or synthetic data with realistic layouts**. Keep private documents in a gitignored folder.
 
 ---
