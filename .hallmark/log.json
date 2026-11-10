@@ -1,0 +1,25 @@
+[
+ {
+  "mode": "redesign",
+  "depth": "full",
+  "scope": "app",
+  "shape": "workbench: setup rail beside the review stage",
+  "theme": "terrazzo (deal 3/3)",
+  "axes": "light/geometric-sans/warm",
+  "hero": "none (app screen)",
+  "nav": "masthead bar, wordmark left, API docs right",
+  "footer": "colophon line",
+  "imagery": "the sample extraction rendered by the product, no photographs",
+  "photos": 0,
+  "entry": "shape=workbench|theme=terrazzo|hero=none|nav=masthead|footer=colophon",
+  "fingerprint": "app screen/workbench/rail+stage/ink rules/hard offset/quiet",
+  "sections": "top bar, lead and system spec, setup rail, review stage, ink band, colophon",
+  "signature": "the review stage: real records and review notes as a spec sheet",
+  "waived": [
+   "39b",
+   "72"
+  ],
+  "prompt": "a white workbench that turns supplier documents into reviewed, exportable records",
+  "date": "2026-11-10"
+ }
+]

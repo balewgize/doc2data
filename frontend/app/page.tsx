@@ -12,24 +12,19 @@ import {
   getRuns,
   getVerticals,
 } from "@/lib/api";
-import type { Run, RunSummary, Vertical } from "@/lib/types";
+import type { Health, Run, RunSummary, Vertical } from "@/lib/types";
 
-const STATUS_STYLES: Record<string, string> = {
-  ok: "bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/20",
-  review:
-    "bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/20",
-  error:
-    "bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-500/10 dark:text-red-400 dark:ring-red-500/20",
+const STATUS_LABEL: Record<Run["status"], string> = {
+  ok: "Ready",
+  review: "Needs review",
+  error: "Failed",
 };
 
 function StatusBadge({ status }: { status: string }) {
+  const key = status in STATUS_LABEL ? (status as Run["status"]) : "review";
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ring-1 ring-inset ${
-        STATUS_STYLES[status] ?? STATUS_STYLES.review
-      }`}
-    >
-      {status}
+    <span className={`status status--${key}`}>
+      {STATUS_LABEL[key]}
     </span>
   );
 }
@@ -62,6 +57,8 @@ function formatBytes(value: unknown): string {
   return `${(number / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+type Pending = "file" | "sample" | "real" | "load" | null;
+
 export default function Home() {
   const [verticals, setVerticals] = useState<Vertical[]>([]);
   const [vertical, setVertical] = useState("ecommerce");
@@ -69,9 +66,17 @@ export default function Home() {
   const [dragging, setDragging] = useState(false);
   const [run, setRun] = useState<Run | null>(null);
   const [runs, setRuns] = useState<RunSummary[]>([]);
-  const [provider, setProvider] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [health, setHealth] = useState<Health | null>(null);
+  const [booted, setBooted] = useState(false);
+  const [pending, setPending] = useState<Pending>(null);
   const [error, setError] = useState<string | null>(null);
+  const [extractError, setExtractError] = useState<string | null>(null);
+  const [stageError, setStageError] = useState<string | null>(null);
+  const [runsError, setRunsError] = useState<string | null>(null);
+
+  const loading = pending !== null;
+  const provider = health?.provider ?? null;
+  const databaseName = health?.database?.split("/").pop() ?? null;
 
   const selected = useMemo(
     () => verticals.find((item) => item.id === vertical),
@@ -79,31 +84,46 @@ export default function Home() {
   );
 
   const refreshRuns = useCallback(async () => {
+    setRunsError(null);
     try {
       setRuns(await getRuns());
     } catch {
-      // Recent runs are secondary; the main error banner covers API failures.
+      setRunsError("Recent runs did not refresh. Try again.");
     }
   }, []);
 
   useEffect(() => {
     let cancelled = false;
     Promise.all([getVerticals(), getRuns(), getHealth()])
-      .then(([verticalList, runList, health]) => {
+      .then(async ([verticalList, runList, healthState]) => {
         if (cancelled) return;
         setVerticals(verticalList);
         setRuns(runList);
-        setProvider(health.provider);
+        setHealth(healthState);
         if (verticalList.length) {
           setVertical((current) =>
             verticalList.some((v) => v.id === current) ? current : verticalList[0].id
           );
         }
+        // Show the product's own last result on arrival; the review stage is the point.
+        if (runList.length) {
+          try {
+            const latest = await getRun(runList[0].id);
+            if (!cancelled) setRun(latest);
+          } catch {
+            // The setup rail still works without a loaded run.
+          }
+        }
       })
       .catch((reason: unknown) => {
         if (!cancelled) {
           setError(reason instanceof Error ? reason.message : "Could not reach the API.");
+          setRunsError("Recent runs did not load.");
+          setStageError("The review stage did not load. Check the API and refresh.");
         }
+      })
+      .finally(() => {
+        if (!cancelled) setBooted(true);
       });
     return () => {
       cancelled = true;
@@ -112,11 +132,12 @@ export default function Home() {
 
   async function handleExtract(useSample = false, real = false) {
     if (!useSample && !file) {
-      setError("Choose a document first, or try the sample.");
+      setExtractError("Choose a document first, or try the sample.");
       return;
     }
-    setLoading(true);
-    setError(null);
+    setPending(real ? "real" : useSample ? "sample" : "file");
+    setExtractError(null);
+    setStageError(null);
     try {
       const result = useSample
         ? await extractSample(vertical, real)
@@ -124,21 +145,25 @@ export default function Home() {
       setRun(result);
       await refreshRuns();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Extraction failed.");
+      setExtractError(
+        reason instanceof Error ? reason.message : "Extraction failed."
+      );
     } finally {
-      setLoading(false);
+      setPending(null);
     }
   }
 
   async function handleLoadRun(id: string) {
-    setLoading(true);
-    setError(null);
+    setPending("load");
+    setStageError(null);
     try {
       setRun(await getRun(id));
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Could not load that run.");
+      setStageError(
+        reason instanceof Error ? reason.message : "Could not load that run."
+      );
     } finally {
-      setLoading(false);
+      setPending(null);
     }
   }
 
@@ -174,68 +199,80 @@ export default function Home() {
             : "Try real doc";
 
   return (
-    <div className="min-h-screen bg-[#f7f7f5] text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-      <header className="border-b border-zinc-200/80 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-900 text-[10px] font-bold tracking-tight text-white dark:bg-white dark:text-zinc-900">
+    <div className="app">
+      <a className="skip" href="#main">
+        Skip to main content
+      </a>
+
+      <header className="topbar">
+        <div className="container topbar__in">
+          <div className="brand">
+            <span className="brand__mark" aria-hidden="true">
               D2D
-            </div>
-            <div>
-              <p className="text-sm font-semibold tracking-tight">Doc2Data</p>
-              <p className="text-xs text-zinc-500">Documents in. Clean data out.</p>
-            </div>
+            </span>
+            <span className="brand__text">
+              <span className="brand__name">Doc2Data</span>
+              <span className="brand__line">Documents in. Clean data out.</span>
+            </span>
           </div>
           <a
+            className="btn"
             href={`${API_URL}/docs`}
             target="_blank"
             rel="noreferrer"
-            className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 transition hover:border-zinc-400 hover:text-zinc-900 dark:border-zinc-800 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:text-zinc-100"
           >
             API docs
           </a>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-6 py-10">
-        <div className="mb-8 max-w-2xl">
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            Turn messy documents into validated records.
-          </h1>
-          <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-            Upload a supplier catalog, invoice, shipment note or claim. Doc2Data
-            extracts structured fields, flags missing or conflicting data, and exports
-            a clean CSV — one core engine, multiple industries.
-          </p>
-        </div>
+      <main id="main">
+        <section className="intro" aria-labelledby="page-title">
+          <div className="container intro__grid">
+            <div className="intro__text">
+              <h1 id="page-title">Turn messy documents into validated records.</h1>
+              <p>
+                Upload a supplier catalog, invoice, shipment note or claim. Doc2Data
+                extracts the fields, flags missing or conflicting data, and exports a
+                clean CSV. One engine, several industries.
+              </p>
+            </div>
+            <dl className="specs" aria-label="Extraction environment">
+              <div>
+                <dt>Provider</dt>
+                <dd>{health?.provider ?? "unavailable"}</dd>
+              </div>
+              <div>
+                <dt>Database</dt>
+                <dd>{databaseName ?? "unavailable"}</dd>
+              </div>
+              <div>
+                <dt>Upload limit</dt>
+                <dd>{health?.max_upload_mb ?? 20} MB</dd>
+              </div>
+            </dl>
+          </div>
+        </section>
 
         {error && (
-          <div
-            role="alert"
-            className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300"
-          >
-            {error}
+          <div className="container alertwrap">
+            <div role="alert" className="alert">
+              {error}
+            </div>
           </div>
         )}
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="space-y-6">
-            <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-base font-semibold">1. Pick an industry</h2>
-                  <p className="mt-1 text-sm text-zinc-500">
-                    The same pipeline, different schemas and export rules.
-                  </p>
-                </div>
-                {selected && !selected.ready && (
-                  <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-                    beta
-                  </span>
-                )}
-              </div>
+        <div className="container workbench">
+          <div className="rail">
+            <section className="block" aria-labelledby="industries-title">
+              <h2 id="industries-title">
+                <span className="step">1.</span> Pick an industry
+              </h2>
+              <p className="block__line">
+                The same pipeline, different schemas and export rules.
+              </p>
 
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <div className="choices" role="group" aria-label="Industry">
                 {verticals.map((item) => {
                   const active = item.id === vertical;
                   return (
@@ -243,175 +280,207 @@ export default function Home() {
                       key={item.id}
                       type="button"
                       onClick={() => setVertical(item.id)}
-                      className={`rounded-xl border p-3 text-left transition ${
-                        active
-                          ? "border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-900"
-                          : "border-zinc-200 bg-white hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-600"
-                      }`}
+                      aria-pressed={active}
+                      className="choice"
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium">{item.label}</span>
-                        <span
-                          className={`text-[10px] font-medium uppercase tracking-wide ${
-                            active ? "text-white/60 dark:text-zinc-600" : "text-zinc-400"
-                          }`}
-                        >
-                          {item.ready ? "live" : "beta"}
-                        </span>
-                      </div>
-                      <p
-                        className={`mt-1 line-clamp-2 text-xs leading-5 ${
-                          active ? "text-white/70 dark:text-zinc-600" : "text-zinc-500"
-                        }`}
-                      >
-                        {item.description}
-                      </p>
+                      <span className="choice__label">{item.label}</span>
+                      <span className="choice__tag">
+                        {item.ready ? "live" : "beta"}
+                      </span>
+                      <span className="choice__desc">{item.description}</span>
                     </button>
                   );
                 })}
-                {!verticals.length && (
-                  <div className="rounded-xl border border-dashed border-zinc-300 p-4 text-sm text-zinc-500 dark:border-zinc-700">
-                    Loading industries…
-                  </div>
+              </div>
+              {!verticals.length && (
+                <p className="muted-line">
+                  {booted ? "No industries loaded." : "Loading industries…"}
+                </p>
+              )}
+            </section>
+
+            <section className="block" aria-labelledby="document-title">
+              <h2 id="document-title">
+                <span className="step">2.</span> Add a document
+              </h2>
+
+              <label
+                className={dragging ? "drop is-dragging" : "drop"}
+                onDragOver={(event) => { event.preventDefault(); setDragging(true); }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={handleDrop}
+              >
+                <input
+                  type="file"
+                  name="file"
+                  className="visually-hidden"
+                  accept=".pdf,.xlsx,.xlsm,.csv,.txt,.md,.json"
+                  onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+                />
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  className="drop__icon"
+                  width="26"
+                  height="26"
+                >
+                  <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" strokeLinecap="round" />
+                </svg>
+                <span className="drop__name">
+                  {file ? file.name : "Drop a file here, or click to browse"}
+                </span>
+                <span className="drop__meta">
+                  {file
+                    ? `${formatBytes(file.size)}, ${file.type || "unknown type"}`
+                    : "PDF, XLSX, CSV, TXT, MD or JSON, up to 20 MB"}
+                </span>
+              </label>
+
+              <div className="fileline">
+                {file && (
+                  <button
+                    type="button"
+                    className="linkbtn"
+                    onClick={() => setFile(null)}
+                  >
+                    Clear file
+                  </button>
                 )}
               </div>
 
-              <div className="mt-6">
-                <h2 className="text-base font-semibold">2. Add a document</h2>
-                <label
-                  onDragOver={(event) => {
-                    event.preventDefault();
-                    setDragging(true);
-                  }}
-                  onDragLeave={() => setDragging(false)}
-                  onDrop={handleDrop}
-                  className={`mt-3 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-10 text-center transition ${
-                    dragging
-                      ? "border-emerald-500 bg-emerald-50/60 dark:bg-emerald-500/10"
-                      : "border-zinc-300 bg-zinc-50/60 hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-950/40 dark:hover:border-zinc-600"
-                  }`}
+              <div className="actions">
+                <button
+                  type="button"
+                  onClick={() => handleExtract(false)}
+                  disabled={loading}
+                  className="btn btn--primary"
+                  aria-describedby="extract-help"
                 >
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept=".pdf,.xlsx,.xlsm,.csv,.txt,.md,.json"
-                    onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-                  />
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    className="h-7 w-7 text-zinc-400"
-                  >
-                    <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" strokeLinecap="round" />
-                  </svg>
-                  <p className="mt-3 text-sm font-medium">
-                    {file ? file.name : "Drop a file here, or click to browse"}
-                  </p>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    {file
-                      ? `${formatBytes(file.size)} · ${file.type || "unknown type"}`
-                      : "PDF, XLSX, CSV, TXT, MD or JSON · up to 20 MB"}
-                  </p>
-                </label>
-
-                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  Extract records
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExtract(true)}
+                  disabled={loading}
+                  className="btn"
+                >
+                  Try the sample
+                </button>
+                {selected?.real_sample && (
                   <button
                     type="button"
-                    onClick={() => handleExtract(false)}
-                    disabled={loading || !file}
-                    className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+                    onClick={() => handleExtract(true, true)}
+                    disabled={loading || !canUseReal}
+                    title={
+                      canUseReal
+                        ? "Run a public real-world document"
+                        : "Set LLM_PROVIDER=openai or ollama in .env to run real samples"
+                    }
+                    className="btn btn--wide"
                   >
-                    {loading ? (
-                      <>
-                        <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-r-transparent" />
-                        Extracting…
-                      </>
-                    ) : (
-                      "Extract records"
-                    )}
+                    {realSampleLabel}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => handleExtract(true)}
-                    disabled={loading}
-                    className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:border-zinc-400 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-zinc-500"
-                  >
-                    Try the sample
-                  </button>
-                  {selected?.real_sample && (
-                    <button
-                      type="button"
-                      onClick={() => handleExtract(true, true)}
-                      disabled={loading || !canUseReal}
-                      title={
-                        canUseReal
-                          ? "Run a public real-world document"
-                          : "Set LLM_PROVIDER=openai or ollama in .env to run real samples"
-                      }
-                      className="rounded-lg border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 transition hover:border-emerald-500 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
-                    >
-                      {realSampleLabel}
-                    </button>
-                  )}
-                  {file && (
-                    <button
-                      type="button"
-                      onClick={() => setFile(null)}
-                      className="text-sm text-zinc-500 underline-offset-4 hover:underline"
-                    >
-                      Clear file
-                    </button>
-                  )}
-                </div>
-                <p className="mt-3 text-xs leading-5 text-zinc-500">
-                  Real samples use public documents (Shopify catalog, AWS invoice,
-                  VICS BOL, CMS-1500). They need OpenAI or Ollama; the offline mock
-                  only parses the synthetic samples.
-                </p>
+                )}
               </div>
+
+              {extractError && (
+                <p className="inline-alert" role="alert">
+                  {extractError}
+                </p>
+              )}
+
+              {(pending === "file" || pending === "sample" || pending === "real") && (
+                <p className="statusline" role="status">
+                  <span className="spinner" aria-hidden="true" />
+                  {pending === "file"
+                    ? "Extracting records…"
+                    : pending === "real"
+                      ? "Running the public sample…"
+                      : "Running the sample…"}
+                </p>
+              )}
+
+              <p className="helpline helpline--reserved" id="extract-help">
+                Extract needs a file. The sample runs without one.
+              </p>
+              <p className="helpline">
+                Real samples use public documents (Shopify catalog, AWS invoice, VICS
+                BOL, CMS-1500). They need OpenAI or Ollama. The offline mock only parses
+                the synthetic samples.
+              </p>
             </section>
 
-            <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-              <div className="flex flex-wrap items-start justify-between gap-4">
+          </div>
+
+          <section className="stage" aria-labelledby="review-title">
+            <div className="stage__card" aria-busy={pending === "load"}>
+              <div className="stage__head">
                 <div>
-                  <h2 className="text-base font-semibold">3. Review and export</h2>
-                  <p className="mt-1 text-sm text-zinc-500">
-                    Validate before anything reaches Shopify, your ledger, or a warehouse system.
+                  <h2 id="review-title">
+                    <span className="step">3.</span> Review and export
+                  </h2>
+                  <p className="stage__sub">
+                    Validate before anything reaches Shopify, your ledger, or a
+                    warehouse system.
                   </p>
                 </div>
                 {run && (
                   <a
                     href={exportUrl(run.id)}
-                    className="rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-emerald-500"
+                    className="btn btn--primary"
                   >
                     Download CSV
                   </a>
                 )}
               </div>
 
+              {stageError && (
+                <p className="inline-alert" role="alert">
+                  {stageError}
+                </p>
+              )}
+
+              {pending === "load" && (
+                <p className="statusline" role="status">
+                  <span className="spinner" aria-hidden="true" />
+                  Opening run…
+                </p>
+              )}
+
               {!run ? (
-                <div className="mt-6 rounded-xl border border-dashed border-zinc-300 px-6 py-12 text-center dark:border-zinc-700">
-                  <p className="text-sm font-medium">No run yet</p>
-                  <p className="mt-1 text-sm text-zinc-500">
+                <div className="empty">
+                  <p className="empty__title">
+                    {booted ? "No run yet" : "Loading the latest run…"}
+                  </p>
+                  <p className="empty__line">
                     Upload a document or load the sample to see the review screen.
                   </p>
+                  {booted && (
+                    <button
+                      type="button"
+                      onClick={() => handleExtract(true)}
+                      disabled={loading}
+                      className="btn"
+                    >
+                      Try the sample
+                    </button>
+                  )}
                 </div>
               ) : (
-                <div className="mt-6">
-                  <div className="flex flex-wrap items-center gap-3">
+                <div>
+                  <div className="runhead">
                     <StatusBadge status={run.status} />
-                    <span className="text-sm font-medium">{run.filename}</span>
-                    <span className="text-xs text-zinc-500">{run.vertical_label}</span>
-                    <span className="text-xs text-zinc-400">
-                      {run.provider} · {formatDate(run.created_at)}
-                    </span>
+                    <span className="runhead__file">{run.filename}</span>
+                    <span className="runhead__meta">{run.vertical_label}</span>
+                    <span className="runhead__meta">{run.provider}</span>
+                    <span className="runhead__meta">{formatDate(run.created_at)}</span>
                   </div>
 
-                  <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <dl className="figures">
                     {[
                       ["Records", String(run.records.length)],
                       ["Review notes", String(run.warnings.length)],
@@ -421,91 +490,109 @@ export default function Home() {
                         `${Number(run.meta.source_chars ?? 0).toLocaleString()} chars`,
                       ],
                     ].map(([label, value]) => (
-                      <div
-                        key={label}
-                        className="rounded-xl bg-zinc-50 px-3 py-3 dark:bg-zinc-950/60"
-                      >
-                        <dt className="text-[11px] uppercase tracking-wide text-zinc-500">
-                          {label}
-                        </dt>
-                        <dd className="mt-1 text-lg font-semibold tabular-nums">{value}</dd>
+                      <div key={label}>
+                        <dt className="figure__label">{label}</dt>
+                        <dd className="figure__value">{value}</dd>
                       </div>
                     ))}
                   </dl>
 
-                  <div className="mt-6 overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
-                    <table className="min-w-full divide-y divide-zinc-200 text-left text-sm dark:divide-zinc-800">
-                      <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-950/60">
-                        <tr>
-                          {visibleColumns.map((column) => (
-                            <th key={column.key} className="whitespace-nowrap px-3 py-2.5 font-medium">
-                              {column.label}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                        {run.records.map((record, index) => (
-                          <tr key={index} className="hover:bg-zinc-50/70 dark:hover:bg-zinc-800/40">
-                            {visibleColumns.map((column) => {
-                              const value = formatValue(record[column.key]);
-                              return (
-                                <td
-                                  key={column.key}
-                                  title={value}
-                                  className="max-w-[220px] truncate whitespace-nowrap px-3 py-2.5 text-zinc-700 dark:text-zinc-300"
-                                >
-                                  {value}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        ))}
-                        {!run.records.length && (
+                  {visibleColumns.length > 6 && (
+                    <p className="tablehint">
+                      {visibleColumns.length} columns, scroll to see them all.
+                    </p>
+                  )}
+
+                  <div className="tablescroll">
+                    <div
+                      className="tablewrap"
+                      role="region"
+                      aria-label="Extracted records, scrolls horizontally"
+                      tabIndex={0}
+                    >
+                      <table>
+                        <caption className="visually-hidden">Extracted records</caption>
+                        <thead>
                           <tr>
-                            <td
-                              colSpan={Math.max(visibleColumns.length, 1)}
-                              className="px-3 py-8 text-center text-zinc-500"
-                            >
-                              No records extracted.
-                            </td>
+                            {visibleColumns.map((column) => (
+                              <th
+                                key={column.key}
+                                scope="col"
+                                className={
+                                  ["int", "float", "decimal"].includes(column.type)
+                                    ? "num"
+                                    : undefined
+                                }
+                              >
+                                {column.label}
+                              </th>
+                            ))}
                           </tr>
-                        )}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {run.records.map((record, index) => (
+                            <tr key={index}>
+                              {visibleColumns.map((column) => {
+                                const value = formatValue(record[column.key]);
+                                return (
+                                  <td
+                                    key={column.key}
+                                    title={value}
+                                    className={
+                                      ["int", "float", "decimal"].includes(column.type)
+                                        ? "num"
+                                        : undefined
+                                    }
+                                  >
+                                    {value}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                          {!run.records.length && (
+                            <tr>
+                              <td
+                                colSpan={Math.max(visibleColumns.length, 1)}
+                                className="tableempty"
+                              >
+                                No records extracted.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                        </table>
+                    </div>
                   </div>
 
                   {sortedWarnings.length > 0 && (
-                    <div className="mt-6">
-                      <h3 className="text-sm font-semibold">
-                        Review notes{" "}
-                        <span className="font-normal text-zinc-500">
+                    <div className="notes">
+                      <h3>
+                        Review notes
+                        <span className="notes__count">
                           ({sortedWarnings.length})
                         </span>
                       </h3>
-                      <ul className="mt-3 space-y-2">
+                      <ul className="notelist">
                         {sortedWarnings.map((warning, index) => (
-                          <li
-                            key={`${warning.code}-${index}`}
-                            className="flex gap-3 rounded-lg border border-zinc-200 px-3 py-2.5 text-sm dark:border-zinc-800"
-                          >
-                            <span
-                              className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                                warning.severity === "error"
-                                  ? "bg-red-500"
-                                  : warning.severity === "warning"
-                                    ? "bg-amber-500"
-                                    : "bg-sky-500"
-                              }`}
-                            />
-                            <div className="min-w-0">
-                              <p className="text-zinc-700 dark:text-zinc-300">
-                                {warning.message}
-                              </p>
-                              <p className="mt-0.5 text-xs text-zinc-400">
-                                {warning.record_key ? `${warning.record_key} · ` : ""}
-                                {warning.code}
-                              </p>
+                          <li key={`${warning.code}-${index}`} className="note">
+                            <span className={`note__sev note__sev--${warning.severity}`}>
+                              {warning.severity === "error"
+                                ? "Error"
+                                : warning.severity === "warning"
+                                  ? "Warning"
+                                  : "Info"}
+                            </span>
+                            <div>
+                              <p className="note__msg">{warning.message}</p>
+                              {(warning.record_key || warning.code) && (
+                                <p className="note__meta">
+                                  {warning.record_key && (
+                                    <span>{warning.record_key}</span>
+                                  )}
+                                  {warning.code && <span>{warning.code}</span>}
+                                </p>
+                              )}
                             </div>
                           </li>
                         ))}
@@ -514,102 +601,94 @@ export default function Home() {
                   )}
                 </div>
               )}
-            </section>
-          </div>
-
-          <aside className="space-y-6">
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-              <h2 className="text-sm font-semibold">Why this exists</h2>
-              <div className="mt-3 space-y-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-                <p>
-                  Companies pay people to retype supplier documents into Shopify,
-                  ERPs and ledgers. That is the workflow this product replaces.
-                </p>
-                <p>
-                  The core is shared. Each industry adds a schema, a prompt and an
-                  export mapping — not a new app.
-                </p>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {["schema validation", "human review", "CSV export"].map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
+            </div>
+          </section>
+          <section className="block recent" aria-labelledby="recent-title">
+            <div className="block__head">
+              <h2 id="recent-title">Recent runs</h2>
+              <button
+                type="button"
+                onClick={refreshRuns}
+                className="linkbtn"
+              >
+                Refresh
+              </button>
+            </div>
+            {runsError && (
+              <p className="inline-alert" role="alert">
+                {runsError}
+              </p>
+            )}
+            <ul className="runs">
+              {runs.map((item) => (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() => handleLoadRun(item.id)}
+                    className="run"
+                    aria-current={run?.id === item.id ? "true" : undefined}
                   >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </section>
+                    <span className="run__file">{item.filename}</span>
+                    <span className={`run__state run__state--${item.status}`}>
+                      {STATUS_LABEL[item.status] ?? STATUS_LABEL.review}
+                    </span>
+                    <span className="run__meta">
+                      {item.vertical_label}, {item.record_count} records,{" "}
+                      {formatDate(item.created_at)}
+                    </span>
+                  </button>
+                </li>
+              ))}
+              {!runs.length && !runsError && (
+                <li className="runs__empty">
+                  {booted
+                    ? "No runs yet. Try the sample, or add a document."
+                    : "Loading recent runs…"}
+                </li>
+              )}
+            </ul>
+          </section>
+        </div>
 
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold">Recent runs</h2>
-                <button
-                  type="button"
-                  onClick={refreshRuns}
-                  className="text-xs text-zinc-500 underline-offset-4 hover:underline"
-                >
-                  Refresh
-                </button>
-              </div>
-              <ul className="mt-3 space-y-2">
-                {runs.map((item) => (
-                  <li key={item.id}>
-                    <button
-                      type="button"
-                      onClick={() => handleLoadRun(item.id)}
-                      className="w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-left transition hover:border-zinc-400 dark:border-zinc-800 dark:hover:border-zinc-600"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="truncate text-sm font-medium">{item.filename}</span>
-                        <span
-                          className={`h-2 w-2 shrink-0 rounded-full ${
-                            item.status === "ok"
-                              ? "bg-emerald-500"
-                              : item.status === "error"
-                                ? "bg-red-500"
-                                : "bg-amber-500"
-                          }`}
-                        />
-                      </div>
-                      <p className="mt-0.5 text-xs text-zinc-500">
-                        {item.vertical_label} · {item.record_count} records ·{" "}
-                        {formatDate(item.created_at)}
-                      </p>
-                    </button>
-                  </li>
+        <section className="band" aria-labelledby="why-title">
+          <div className="container band__grid">
+            <div className="band__col">
+              <h2 id="why-title">Why this exists</h2>
+              <p>
+                Companies pay people to retype supplier documents into Shopify, ERPs
+                and ledgers. That is the workflow this product replaces.
+              </p>
+              <p>
+                The core is shared. Each industry adds a schema, a prompt and an export
+                mapping, not a new app.
+              </p>
+              <ul className="tags">
+                {["schema validation", "human review", "CSV export"].map((tag) => (
+                  <li key={tag}>{tag}</li>
                 ))}
-                {!runs.length && (
-                  <li className="rounded-xl border border-dashed border-zinc-300 px-3 py-6 text-center text-sm text-zinc-500 dark:border-zinc-700">
-                    No runs yet.
-                  </li>
-                )}
               </ul>
-            </section>
-
-            <section className="rounded-2xl border border-zinc-200 bg-zinc-900 p-5 text-zinc-100 shadow-sm dark:border-zinc-800">
-              <h2 className="text-sm font-semibold">MVP status</h2>
-              <p className="mt-2 text-xs leading-5 text-zinc-400">
+            </div>
+            <div className="band__col band__col--status">
+              <h2>MVP status</h2>
+              <p>
                 E-commerce is live. Finance, logistics and healthcare share the same
                 engine and are marked beta until their prompts are tuned on real
                 documents.
               </p>
-              <p className="mt-3 text-xs leading-5 text-zinc-500">
+              <p>
                 Offline demo uses the deterministic mock provider. Set{" "}
-                <code className="rounded bg-zinc-800 px-1 py-0.5">LLM_PROVIDER=openai</code>{" "}
-                or <code className="rounded bg-zinc-800 px-1 py-0.5">ollama</code> for
-                real extraction, including the bundled public samples.
+                <code>LLM_PROVIDER=openai</code> or <code>ollama</code> for real
+                extraction, including the bundled public samples.
               </p>
-            </section>
-          </aside>
-        </div>
+            </div>
+          </div>
+        </section>
       </main>
 
-      <footer className="border-t border-zinc-200/80 py-6 dark:border-zinc-800">
-        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-6 text-xs text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
-          <p>Doc2Data · a document-to-data engine for real back-office workflows.</p>
-          <p>Built on FastAPI + Next.js · SQLite for the MVP.</p>
+      <footer className="footer">
+        <div className="container footer__in">
+          <p>Doc2Data. A document-to-data engine for real back-office workflows.</p>
+          <p>Built on FastAPI + Next.js. SQLite for the MVP.</p>
         </div>
       </footer>
     </div>
