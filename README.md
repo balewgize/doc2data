@@ -184,7 +184,6 @@ cd frontend && pnpm build       # frontend production build
 
 ## Docs
 
-- [Demo script for a 90 second Loom](DEMO.md)
 - `./scripts/fetch_demo_docs.sh` downloads a public sample pack into `demo_docs/`
   (gitignored).
 - Built on [fastapi-nextjs-starter](https://github.com/balewgize/fastapi-nextjs-starter).
