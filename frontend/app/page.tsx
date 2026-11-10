@@ -935,7 +935,7 @@ export default function Home() {
         <div className="container footer__in">
           <p>Doc2Data. Documents in. Clean data out.</p>
           <p>
-            FastAPI, Next.js and SQLite.{" "}
+            FastAPI, Next.js, SQLite, LLM {" "}
             <a
               href="https://github.com/balewgize/doc2data"
               target="_blank"
