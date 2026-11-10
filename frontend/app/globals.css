@@ -2,6 +2,7 @@
  * nav: masthead bar, wordmark left, API docs right · signature: the review stage, real records and review notes as a spec sheet · states: default, hover, focus, active, disabled, loading, error, empty
  * axes: light/geometric-sans/warm · posture: restrained · contrast: pass · v2.0.0 */
 /* Hallmark · finish-review: subagent · 5 findings · 5 resolved · app screen, no hero review */
+/* Hallmark · display: Schibsted Grotesk 700, the theme's Syne replaced on request after the section heads read too wide to scan */
 /* Hallmark · pre-emit critique: P5 H4 E4 S5 R4 V4 · weakest: E, twelve record columns can crowd the stage; led with the run's own status and figures, and kept the table on one scrolling rule under a pinned key column */
 /* Hallmark · waive 39b · the industry rows print their schema description in the same cell · a 40px control would hide the schema, so the list option grows with its copy */
 /* Hallmark · waive 72 · the records table scrolls inside its own overflow region · the measured 562px is the table's off-screen part, not text crowded into its box */
@@ -801,7 +802,9 @@ body {
 }
 .tablewrap .cellinput:disabled {
   opacity: 0.55;
-  cursor: wait;
+  cursor: not-allowed;
+  background: var(--color-paper-2);
+  color: var(--color-ink-2);
 }
 
 /* ---------- review notes ---------- */

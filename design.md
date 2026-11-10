@@ -7,6 +7,7 @@ The locked system. Every Hallmark run reads this first and pages share it. Chang
 - Shape of the first page: app screen, a workbench: setup rail beside the review stage
 - Theme: Terrazzo, light colourway (the white specimen sheet)
 - Axes: light paper / geometric sans / warm rust · posture: restrained
+- Display: Schibsted Grotesk 700, amended on request; the theme's Syne is extended and read too wide and slow at 23 to 33px
 
 ## Tokens
 `frontend/app/tokens.css` is the source of truth. The roles:
@@ -22,7 +23,7 @@ The locked system. Every Hallmark run reads this first and pages share it. Chang
   --color-error-ink: oklch(44% 0.16 27);  --color-error-soft: oklch(94% 0.025 30);
   --color-warn-ink: oklch(42% 0.075 75);  --color-warn-soft: oklch(94% 0.03 78);
   --color-ok-ink: oklch(40% 0.08 150);  --color-ok-soft: oklch(94% 0.025 150);
-  --font-display: "Syne", ui-sans-serif, sans-serif;  --font-body: "Onest", ui-sans-serif, sans-serif;
+  --font-display: "Schibsted Grotesk", ui-sans-serif, sans-serif;  --font-body: "Onest", ui-sans-serif, sans-serif;
   --font-outlier: "JetBrains Mono", ui-monospace, monospace;
   --radius-card: 0;  --radius-pill: 0;  --rule-hair: 1px;  --rule-bar: 2px;
   --shadow-card: 14px 14px 0 var(--color-paper-3);  --shadow-app: 10px 10px 0 var(--color-paper-3);

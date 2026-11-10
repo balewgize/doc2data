@@ -35,7 +35,7 @@
   --color-accent-soft: oklch(91% 0.035 45);
   --color-accent-ink: oklch(99.5% 0.003 82);
   --color-focus: oklch(50% 0.16 38);
-  --font-display: var(--font-syne), ui-sans-serif, sans-serif;
+  --font-display: var(--font-schibsted), ui-sans-serif, sans-serif;
   --font-body: var(--font-onest), ui-sans-serif, sans-serif;
   --font-outlier: var(--font-jetbrains), ui-monospace, monospace;
   --radius-card: 0;

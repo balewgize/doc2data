@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono, Onest, Syne } from "next/font/google";
+import { JetBrains_Mono, Onest, Schibsted_Grotesk } from "next/font/google";
 import "./globals.css";
 
-const syne = Syne({
-  variable: "--font-syne",
+const schibsted = Schibsted_Grotesk({
+  variable: "--font-schibsted",
   subsets: ["latin"],
   display: "swap",
 });
@@ -30,7 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${syne.variable} ${onest.variable} ${jetbrains.variable}`}
+      className={`${schibsted.variable} ${onest.variable} ${jetbrains.variable}`}
     >
       <body>{children}</body>
     </html>
