@@ -1,4 +1,4 @@
-"""API-facing models for Paperlane runs."""
+"""API-facing models for Doc2Data runs."""
 
 from __future__ import annotations
 

@@ -5,7 +5,7 @@ Two different jobs:
 1. **Demo** — 3–5 documents per vertical that look believable in a screen recording.
 2. **Eval** — 20+ documents with known answers so you can report field accuracy.
 
-Paperlane already bundles public demo samples for every vertical:
+Doc2Data already bundles public demo samples for every vertical:
 
 - `sample_catalog_public.csv` — Shopify's public dummy product catalog
 - `sample_invoice_public.pdf` — redacted AWS invoice from invoice2data fixtures
@@ -105,5 +105,5 @@ Then:
 - **Never commit** customer documents, contracts, invoices, claims, or PII.
 - **Redact** names, emails, phone numbers, account numbers, and addresses in screenshots.
 - **Check licenses**: ODbL (attribution), MIT, CC BY, research-only datasets.
-- **Scanned PDFs need OCR**; Paperlane currently reads embedded text only.
+- **Scanned PDFs need OCR**; Doc2Data currently reads embedded text only.
 - **Government forms are public**, but filled examples may contain real data. Use blank templates and synthetic values.

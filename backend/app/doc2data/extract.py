@@ -13,11 +13,11 @@ from typing import Any
 from pydantic import ValidationError
 
 from app.core.config import MAX_CHARS_PER_CHUNK
-from app.paperlane.llm import ProviderError, get_provider
-from app.paperlane.models import WarningItem
-from app.paperlane.normalize import normalize_record
-from app.paperlane.validate import run_status, validate_records
-from app.paperlane.verticals import VerticalConfig, build_record_model
+from app.doc2data.llm import ProviderError, get_provider
+from app.doc2data.models import WarningItem
+from app.doc2data.normalize import normalize_record
+from app.doc2data.validate import run_status, validate_records
+from app.doc2data.verticals import VerticalConfig, build_record_model
 
 
 class UnsupportedDocument(ValueError):

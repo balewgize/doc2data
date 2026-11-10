@@ -6,5 +6,5 @@ from pathlib import Path
 # any app module is imported.
 os.environ["LLM_PROVIDER"] = "mock"
 os.environ["DATABASE_PATH"] = str(
-    Path(tempfile.mkdtemp(prefix="paperlane-tests-")) / "test.db"
+    Path(tempfile.mkdtemp(prefix="doc2data-tests-")) / "test.db"
 )

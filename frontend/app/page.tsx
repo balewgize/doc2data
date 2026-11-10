@@ -178,11 +178,11 @@ export default function Home() {
       <header className="border-b border-zinc-200/80 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-900 text-sm font-bold text-white dark:bg-white dark:text-zinc-900">
-              PL
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-900 text-[10px] font-bold tracking-tight text-white dark:bg-white dark:text-zinc-900">
+              D2D
             </div>
             <div>
-              <p className="text-sm font-semibold tracking-tight">Paperlane</p>
+              <p className="text-sm font-semibold tracking-tight">Doc2Data</p>
               <p className="text-xs text-zinc-500">Documents in. Clean data out.</p>
             </div>
           </div>
@@ -203,7 +203,7 @@ export default function Home() {
             Turn messy documents into validated records.
           </h1>
           <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-            Upload a supplier catalog, invoice, shipment note or claim. Paperlane
+            Upload a supplier catalog, invoice, shipment note or claim. Doc2Data
             extracts structured fields, flags missing or conflicting data, and exports
             a clean CSV — one core engine, multiple industries.
           </p>
@@ -608,7 +608,7 @@ export default function Home() {
 
       <footer className="border-t border-zinc-200/80 py-6 dark:border-zinc-800">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-6 text-xs text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
-          <p>Paperlane · a document-to-data engine for real back-office workflows.</p>
+          <p>Doc2Data · a document-to-data engine for real back-office workflows.</p>
           <p>Built on FastAPI + Next.js · SQLite for the MVP.</p>
         </div>
       </footer>

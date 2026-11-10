@@ -1,4 +1,4 @@
-"""Paperlane API routes."""
+"""Doc2Data API routes."""
 
 from __future__ import annotations
 
@@ -12,17 +12,17 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
 
 from app.core.config import DATABASE_PATH, MAX_UPLOAD_MB, resolved_provider
-from app.paperlane.export import export_csv
-from app.paperlane.extract import ExtractionError, UnsupportedDocument, extract_document
-from app.paperlane.llm import ProviderError
-from app.paperlane.models import Column, Run
-from app.paperlane.storage import get_run, list_runs, save_run
-from app.paperlane.verticals import VERTICALS
+from app.doc2data.export import export_csv
+from app.doc2data.extract import ExtractionError, UnsupportedDocument, extract_document
+from app.doc2data.llm import ProviderError
+from app.doc2data.models import Column, Run
+from app.doc2data.storage import get_run, list_runs, save_run
+from app.doc2data.verticals import VERTICALS
 
-router = APIRouter(prefix="/api/paperlane", tags=["paperlane"])
+router = APIRouter(prefix="/api/doc2data", tags=["doc2data"])
 
 ALLOWED_EXTENSIONS = {".pdf", ".xlsx", ".xlsm", ".csv", ".txt", ".md", ".json"}
-SAMPLE_DIR = Path(__file__).resolve().parent.parent / "paperlane" / "sample_data"
+SAMPLE_DIR = Path(__file__).resolve().parent.parent / "doc2data" / "sample_data"
 
 
 def _config(vertical: str):

@@ -14,7 +14,7 @@ from typing import Any
 
 from dateutil import parser as date_parser
 
-from app.paperlane.verticals import FieldSpec, VerticalConfig
+from app.doc2data.verticals import FieldSpec, VerticalConfig
 
 ISO_CURRENCIES = {
     "USD", "EUR", "GBP", "JPY", "CAD", "AUD", "CHF", "CNY", "INR", "NGN",

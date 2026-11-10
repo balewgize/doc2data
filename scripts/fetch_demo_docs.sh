@@ -53,4 +53,4 @@ fetch \
 
 echo
 echo "Downloaded to ${DEST}"
-echo "Next: fill the templates with synthetic data, then run Paperlane with LLM_PROVIDER=openai or ollama."
+echo "Next: fill the templates with synthetic data, then run Doc2Data with LLM_PROVIDER=openai or ollama."

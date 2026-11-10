@@ -1,10 +1,10 @@
 from decimal import Decimal
 from pathlib import Path
 
-from app.paperlane.extract import extract_document
-from app.paperlane.verticals import ECOMMERCE, FINANCE, HEALTHCARE, LOGISTICS
+from app.doc2data.extract import extract_document
+from app.doc2data.verticals import ECOMMERCE, FINANCE, HEALTHCARE, LOGISTICS
 
-SAMPLE_DIR = Path(__file__).resolve().parents[1] / "app" / "paperlane" / "sample_data"
+SAMPLE_DIR = Path(__file__).resolve().parents[1] / "app" / "doc2data" / "sample_data"
 
 
 def test_ecommerce_sample_extracts_and_dedupes():

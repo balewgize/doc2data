@@ -13,7 +13,7 @@ import re
 from decimal import Decimal
 from typing import Any
 
-from app.paperlane.verticals import VerticalConfig
+from app.doc2data.verticals import VerticalConfig
 
 SHOPIFY_COLUMNS = [
     "Handle", "Title", "Body (HTML)", "Vendor", "Product Category", "Type", "Tags",

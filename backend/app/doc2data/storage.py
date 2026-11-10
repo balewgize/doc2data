@@ -11,7 +11,7 @@ import sqlite3
 from pathlib import Path
 
 from app.core.config import DATABASE_PATH
-from app.paperlane.models import Run, RunSummary
+from app.doc2data.models import Run, RunSummary
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS runs (

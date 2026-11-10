@@ -18,8 +18,8 @@ from app.core.config import (
     OPENAI_MODEL,
     resolved_provider,
 )
-from app.paperlane.normalize import parse_dimensions
-from app.paperlane.verticals import VerticalConfig, build_record_model
+from app.doc2data.normalize import parse_dimensions
+from app.doc2data.verticals import VerticalConfig, build_record_model
 
 
 class ProviderError(RuntimeError):

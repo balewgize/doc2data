@@ -10,8 +10,8 @@ from datetime import date
 from decimal import Decimal
 from typing import Any
 
-from app.paperlane.models import WarningItem
-from app.paperlane.verticals import VerticalConfig
+from app.doc2data.models import WarningItem
+from app.doc2data.verticals import VerticalConfig
 
 
 def _blank(value: Any) -> bool:

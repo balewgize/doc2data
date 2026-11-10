@@ -10,7 +10,7 @@ async function errorMessage(response: Response): Promise<string> {
 }
 
 export async function getVerticals(): Promise<Vertical[]> {
-  const response = await fetch(`${API_URL}/api/paperlane/verticals`, {
+  const response = await fetch(`${API_URL}/api/doc2data/verticals`, {
     cache: "no-store",
   });
   if (!response.ok) throw new Error(await errorMessage(response));
@@ -18,7 +18,7 @@ export async function getVerticals(): Promise<Vertical[]> {
 }
 
 export async function getHealth(): Promise<Health> {
-  const response = await fetch(`${API_URL}/api/paperlane/health`, {
+  const response = await fetch(`${API_URL}/api/doc2data/health`, {
     cache: "no-store",
   });
   if (!response.ok) throw new Error(await errorMessage(response));
@@ -26,7 +26,7 @@ export async function getHealth(): Promise<Health> {
 }
 
 export async function getRuns(): Promise<RunSummary[]> {
-  const response = await fetch(`${API_URL}/api/paperlane/runs`, {
+  const response = await fetch(`${API_URL}/api/doc2data/runs`, {
     cache: "no-store",
   });
   if (!response.ok) throw new Error(await errorMessage(response));
@@ -34,7 +34,7 @@ export async function getRuns(): Promise<RunSummary[]> {
 }
 
 export async function getRun(id: string): Promise<Run> {
-  const response = await fetch(`${API_URL}/api/paperlane/runs/${id}`, {
+  const response = await fetch(`${API_URL}/api/doc2data/runs/${id}`, {
     cache: "no-store",
   });
   if (!response.ok) throw new Error(await errorMessage(response));
@@ -45,7 +45,7 @@ export async function extractFile(file: File, vertical: string): Promise<Run> {
   const form = new FormData();
   form.append("file", file);
   form.append("vertical", vertical);
-  const response = await fetch(`${API_URL}/api/paperlane/extract`, {
+  const response = await fetch(`${API_URL}/api/doc2data/extract`, {
     method: "POST",
     body: form,
   });
@@ -60,7 +60,7 @@ export async function extractSample(
   const query = new URLSearchParams({ vertical });
   if (real) query.set("real", "true");
   const response = await fetch(
-    `${API_URL}/api/paperlane/extract/sample?${query.toString()}`,
+    `${API_URL}/api/doc2data/extract/sample?${query.toString()}`,
     { method: "POST" }
   );
   if (!response.ok) throw new Error(await errorMessage(response));
@@ -68,5 +68,5 @@ export async function extractSample(
 }
 
 export function exportUrl(runId: string): string {
-  return `${API_URL}/api/paperlane/runs/${runId}/export.csv`;
+  return `${API_URL}/api/doc2data/runs/${runId}/export.csv`;
 }

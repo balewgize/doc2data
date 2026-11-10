@@ -1,15 +1,15 @@
-# Paperlane
+# Doc2Data
 
 **Documents in. Clean data out.**
 
-Paperlane turns supplier catalogs, invoices, shipment notes and healthcare claims into
+Doc2Data turns supplier catalogs, invoices, shipment notes and healthcare claims into
 validated, structured records — then exports an import-ready CSV. One shared extraction
 engine, multiple industry configurations.
 
 Built on [fastapi-nextjs-starter](https://github.com/balewgize/fastapi-nextjs-starter):
 FastAPI + Next.js, Dockerized, Vercel-ready.
 
-![Paperlane review screen](docs/screenshot.png)
+![Doc2Data review screen](docs/screenshot.png)
 
 ---
 
@@ -20,7 +20,7 @@ Shopify, an ERP, a ledger or a warehouse system. It is slow, error-prone and exp
 Generic "chat with your PDF" tools do not solve it because the hard part is not reading
 the document — it is **getting a clean, validated record into the system of record**.
 
-Paperlane is the workflow layer:
+Doc2Data is the workflow layer:
 
 1. Upload a document (PDF, XLSX, CSV, TXT, MD, JSON).
 2. Pick the industry schema.
@@ -137,7 +137,7 @@ the mock.
 Next.js UI
    │  multipart upload
    ▼
-FastAPI  /api/paperlane
+FastAPI  /api/doc2data
    │
    ▼
 Extraction pipeline
@@ -156,30 +156,30 @@ Key modules:
 
 | Path | Responsibility |
 |---|---|
-| `backend/app/paperlane/verticals.py` | Industry configs + dynamic Pydantic schemas |
-| `backend/app/paperlane/extract.py` | Read, chunk, call provider, normalize, validate, dedupe |
-| `backend/app/paperlane/normalize.py` | Money, weight, dimensions and currency parsing |
-| `backend/app/paperlane/validate.py` | Cross-field business rules and review notes |
-| `backend/app/paperlane/export.py` | Shopify CSV + generic industry CSV |
-| `backend/app/paperlane/llm.py` | Mock, OpenAI and Ollama providers |
-| `backend/app/paperlane/storage.py` | SQLite run history |
-| `backend/app/routers/paperlane.py` | API routes |
+| `backend/app/doc2data/verticals.py` | Industry configs + dynamic Pydantic schemas |
+| `backend/app/doc2data/extract.py` | Read, chunk, call provider, normalize, validate, dedupe |
+| `backend/app/doc2data/normalize.py` | Money, weight, dimensions and currency parsing |
+| `backend/app/doc2data/validate.py` | Cross-field business rules and review notes |
+| `backend/app/doc2data/export.py` | Shopify CSV + generic industry CSV |
+| `backend/app/doc2data/llm.py` | Mock, OpenAI and Ollama providers |
+| `backend/app/doc2data/storage.py` | SQLite run history |
+| `backend/app/routers/doc2data.py` | API routes |
 
 ## API
 
 | Method | Route | Purpose |
 |---|---|---|
-| GET | `/api/paperlane/verticals` | Available industry schemas |
-| POST | `/api/paperlane/extract` | Upload a document (`file`, `vertical`) |
-| POST | `/api/paperlane/extract/sample?vertical=ecommerce` | Run bundled sample |
-| GET | `/api/paperlane/runs` | Recent runs |
-| GET | `/api/paperlane/runs/{id}` | Full run + records + warnings |
-| GET | `/api/paperlane/runs/{id}/export.csv` | Download CSV |
-| GET | `/api/paperlane/health` | Provider, verticals, database |
+| GET | `/api/doc2data/verticals` | Available industry schemas |
+| POST | `/api/doc2data/extract` | Upload a document (`file`, `vertical`) |
+| POST | `/api/doc2data/extract/sample?vertical=ecommerce` | Run bundled sample |
+| GET | `/api/doc2data/runs` | Recent runs |
+| GET | `/api/doc2data/runs/{id}` | Full run + records + warnings |
+| GET | `/api/doc2data/runs/{id}/export.csv` | Download CSV |
+| GET | `/api/doc2data/health` | Provider, verticals, database |
 
 ## Adding an industry
 
-Add one `VerticalConfig` in `backend/app/paperlane/verticals.py`:
+Add one `VerticalConfig` in `backend/app/doc2data/verticals.py`:
 
 ```python
 INSURANCE = VerticalConfig(
@@ -228,18 +228,3 @@ make check       # backend tests + frontend production build
 5. Eval harness: labeled documents per vertical, field accuracy, fix acceptance rate.
 6. Correction capture: turn human edits into eval data and prompt improvements.
 7. Deploy on Vercel Services + a managed Postgres.
-
-## Commercial shape
-
-- **Productized service:** supplier catalog → Shopify import (`$0.50–2/SKU`), invoice
-  extraction, shipment data cleanup.
-- **SaaS:** per-document pricing, then per-seat with review workflows.
-- **Vertical templates:** the same engine sold as an e-commerce, finance, logistics or
-  healthcare data pipeline.
-
-## Credits
-
-- Starter: [balewgize/fastapi-nextjs-starter](https://github.com/balewgize/fastapi-nextjs-starter)
-- Extraction seed: community contributions in the LLM Engineering course repo
-  (`wk1-day1-datasheet_comparator.ipynb`, `Recipe_Nutrition_Calculator/`,
-  `hmnhGeek_day5_streamlit_brochure_web_app/`).

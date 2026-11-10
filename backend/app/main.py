@@ -5,8 +5,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.supabase import is_supabase_configured
-from app.paperlane.storage import init_db
-from app.routers.paperlane import router as paperlane_router
+from app.doc2data.storage import init_db
+from app.routers.doc2data import router as doc2data_router
 from app.routers.health_supabase import router as supabase_health_router
 
 
@@ -23,7 +23,7 @@ async def lifespan(_: FastAPI):
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="Paperlane API",
+        title="Doc2Data API",
         description="Turn supplier catalogs, invoices and other business documents into validated, structured records.",
         version="0.1.0",
         lifespan=lifespan,
@@ -39,8 +39,8 @@ def create_app() -> FastAPI:
 
     # Shared infra router (Supabase health check).
     app.include_router(supabase_health_router)
-    # Paperlane product router.
-    app.include_router(paperlane_router)
+    # Doc2Data product router.
+    app.include_router(doc2data_router)
 
     @app.get("/api/health")
     def health() -> dict[str, object]:
