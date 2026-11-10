@@ -5,8 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   API_URL,
   exportUrl,
-  extractFile,
-  extractSample,
+  extractFileStream,
+  extractSampleStream,
   getHealth,
   getRun,
   getRuns,
@@ -14,7 +14,62 @@ import {
   sourceUrl,
   updateRecord,
 } from "@/lib/api";
+import type { ExtractionProgress } from "@/lib/api";
 import type { Health, Run, RunSummary, Vertical } from "@/lib/types";
+
+const PROGRESS_STEPS = [
+  { key: "reading", label: "Read the document" },
+  { key: "chunking", label: "Split into chunks" },
+  { key: "extracting", label: "Extract fields" },
+  { key: "validating", label: "Validate records" },
+  { key: "saving", label: "Save the run" },
+];
+
+function progressStep(stage: string): number {
+  if (stage === "chunking") return 1;
+  if (stage === "extracting" || stage === "extracted") return 2;
+  if (stage === "validating" || stage === "validated") return 3;
+  if (stage === "saving" || stage === "saved") return 4;
+  if (stage === "done") return PROGRESS_STEPS.length;
+  return 0;
+}
+
+function ExtractionProgressView({ progress }: { progress: ExtractionProgress | null }) {
+  const active = progressStep(progress?.stage ?? "starting");
+  return (
+    <div className="progress" aria-live="polite">
+      <div className="progress__head">
+        <p className="progress__title">Extracting records</p>
+        <p className="progress__message">{progress?.message ?? "Starting…"}</p>
+      </div>
+      <ol className="steps">
+        {PROGRESS_STEPS.map((step, index) => {
+          const state =
+            index < active ? "done" : index === active ? "active" : "waiting";
+          const detail =
+            step.key === "extracting" && progress?.total
+              ? progress.stage === "extracted"
+                ? `${progress.current ?? 0} of ${progress.total} chunks`
+                : `${progress.total} chunks`
+              : null;
+          return (
+            <li key={step.key} className={`steps__item steps__item--${state}`}>
+              <span className="steps__num">{index + 1}</span>
+              <span className="steps__label">{step.label}</span>
+              <span className="steps__state">
+                {state === "done"
+                  ? "Done"
+                  : state === "active"
+                    ? (detail ?? "Running")
+                    : "Waiting"}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
 
 const STATUS_LABEL: Record<Run["status"], string> = {
   ok: "Ready",
@@ -173,10 +228,13 @@ export default function Home() {
   const [pending, setPending] = useState<Pending>(null);
   const [error, setError] = useState<string | null>(null);
   const [extractError, setExtractError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<ExtractionProgress | null>(null);
   const [stageError, setStageError] = useState<string | null>(null);
   const [runsError, setRunsError] = useState<string | null>(null);
 
   const loading = pending !== null;
+  const extracting =
+    pending === "file" || pending === "sample" || pending === "real";
   const databaseName = health?.database?.split("/").pop() ?? null;
   const liveProvider =
     health?.provider === "ollama" || health?.provider === "openrouter";
@@ -247,10 +305,11 @@ export default function Home() {
     setPending(real ? "real" : useSample ? "sample" : "file");
     setExtractError(null);
     setStageError(null);
+    setProgress({ stage: "starting", message: "Starting extraction" });
     try {
       const result = useSample
-        ? await extractSample(vertical, real)
-        : await extractFile(file as File, vertical);
+        ? await extractSampleStream(vertical, real, setProgress)
+        : await extractFileStream(file as File, vertical, setProgress);
       setRun(result);
       await refreshRuns();
     } catch (reason) {
@@ -259,6 +318,7 @@ export default function Home() {
       );
     } finally {
       setPending(null);
+      setProgress(null);
     }
   }
 
@@ -520,14 +580,10 @@ export default function Home() {
                 </p>
               )}
 
-              {(pending === "file" || pending === "sample" || pending === "real") && (
+              {extracting && (
                 <p className="statusline" role="status">
                   <span className="spinner" aria-hidden="true" />
-                  {pending === "file"
-                    ? "Extracting records…"
-                    : pending === "real"
-                      ? "Running the public sample…"
-                      : "Running the sample…"}
+                  {progress?.message ?? "Starting…"}
                 </p>
               )}
 
@@ -536,7 +592,11 @@ export default function Home() {
               </p>
               <p className="helpline">
                 {liveProvider
-                  ? `Public samples run live with ${providerLabel}. Local extraction can take a minute.`
+                  ? `Public samples run live with ${providerLabel}.${
+                      health?.provider === "ollama"
+                        ? " Local extraction can take a minute."
+                        : ""
+                    }`
                   : "Public samples are bundled with the project. They run offline in demo mode; set OpenRouter or Ollama (gemma3:1b) to re-extract them live."}
               </p>
             </section>
@@ -544,7 +604,7 @@ export default function Home() {
           </div>
 
           <section className="stage" aria-labelledby="review-title">
-            <div className="stage__card" aria-busy={pending === "load"}>
+            <div className="stage__card" aria-busy={pending === "load" || extracting}>
               <div className="stage__head">
                 <div>
                   <h2 id="review-title">
@@ -555,7 +615,7 @@ export default function Home() {
                     immediately.
                   </p>
                 </div>
-                {run && (
+                {run && !extracting && (
                   <a
                     href={exportUrl(run.id)}
                     className="btn btn--primary"
@@ -578,7 +638,9 @@ export default function Home() {
                 </p>
               )}
 
-              {!run ? (
+              {extracting ? (
+                <ExtractionProgressView progress={progress} />
+              ) : !run ? (
                 <div className="empty">
                   <p className="empty__title">
                     {booted ? "No run yet" : "Loading the latest run…"}
@@ -605,6 +667,12 @@ export default function Home() {
                     <span className="runhead__meta">{run.vertical_label}</span>
                     <span className="runhead__meta">{run.provider}</span>
                     <span className="runhead__meta">{formatDate(run.created_at)}</span>
+                    {typeof run.meta.elapsed_ms === "number" &&
+                      run.meta.elapsed_ms > 0 && (
+                        <span className="runhead__meta">
+                          {(run.meta.elapsed_ms / 1000).toFixed(1)}s
+                        </span>
+                      )}
                   </div>
 
                   {run.meta.public_sample === true && (
@@ -865,9 +933,9 @@ export default function Home() {
 
       <footer className="footer">
         <div className="container footer__in">
-          <p>Doc2Data by Alemnew Marie. Documents in. Clean data out.</p>
+          <p>Doc2Data. Documents in. Clean data out.</p>
           <p>
-            Single-user build on FastAPI, Next.js and SQLite.{" "}
+            FastAPI, Next.js and SQLite.{" "}
             <a
               href="https://github.com/balewgize/doc2data"
               target="_blank"

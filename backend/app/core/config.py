@@ -39,6 +39,7 @@ _default_database = (
 DATABASE_PATH = Path(_env("DATABASE_PATH", str(_default_database)))
 MAX_UPLOAD_MB = int(_env("MAX_UPLOAD_MB", "20"))
 MAX_CHARS_PER_CHUNK = int(_env("MAX_CHARS_PER_CHUNK", "12000"))
+MAX_CHUNK_WORKERS = max(1, int(_env("MAX_CHUNK_WORKERS", "4")))
 
 
 def resolved_provider() -> str:

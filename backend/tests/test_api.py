@@ -1,3 +1,4 @@
+import json
 from decimal import Decimal
 
 from fastapi.testclient import TestClient
@@ -172,3 +173,21 @@ def test_source_preview_is_not_available_for_uploads():
 
         missing = client.get("/api/doc2data/runs/missing/source")
         assert missing.status_code == 404
+
+
+def test_sample_stream_reports_progress_and_finishes():
+    with TestClient(app) as client:
+        with client.stream(
+            "POST", "/api/doc2data/extract/sample/stream?vertical=ecommerce"
+        ) as response:
+            assert response.status_code == 200
+            assert response.headers["content-type"].startswith("text/event-stream")
+            body = "".join(response.iter_text())
+
+    events = [line[5:] for line in body.splitlines() if line.startswith("data:")]
+    stages = [json.loads(event)["stage"] for event in events]
+    assert "reading" in stages
+    assert "extracting" in stages
+    assert stages[-1] == "done"
+    done = json.loads(events[-1])
+    assert len(done["run"]["records"]) == 3

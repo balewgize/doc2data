@@ -6,13 +6,15 @@ import csv
 import io
 import re
 import time
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from pydantic import ValidationError
 
-from app.core.config import MAX_CHARS_PER_CHUNK
+from app.core.config import MAX_CHARS_PER_CHUNK, MAX_CHUNK_WORKERS
 from app.doc2data.llm import ProviderError, get_provider
 from app.doc2data.models import WarningItem
 from app.doc2data.normalize import normalize_record
@@ -140,33 +142,131 @@ def chunk_text(text: str, max_chars: int = MAX_CHARS_PER_CHUNK, overlap: int = 4
     return chunks
 
 
-def extract_document(path: Path, filename: str, config: VerticalConfig) -> ExtractionResult:
+ProgressEvent = dict[str, Any]
+ProgressCallback = Callable[[ProgressEvent], None]
+
+
+def _emit(
+    on_progress: ProgressCallback | None,
+    stage: str,
+    message: str,
+    **extra: Any,
+) -> None:
+    if on_progress is not None:
+        on_progress({"stage": stage, "message": message, **extra})
+
+
+def _extract_chunks(
+    provider,
+    chunks: list[str],
+    config: VerticalConfig,
+    on_progress: ProgressCallback | None,
+) -> list[tuple[int, dict[str, Any] | None, Exception | None]]:
+    total = len(chunks)
+    if not total:
+        return []
+
+    if total == 1:
+        _emit(on_progress, "extracting", "Extracting the document", current=1, total=1)
+        try:
+            payload = provider.extract(chunks[0], config)
+        except Exception as exc:
+            _emit(on_progress, "extracted", "The chunk failed", current=1, total=1)
+            return [(1, None, exc)]
+        _emit(on_progress, "extracted", "Chunk 1 of 1 done", current=1, total=1)
+        return [(1, payload, None)]
+
+    workers = min(MAX_CHUNK_WORKERS, total)
+    _emit(
+        on_progress,
+        "extracting",
+        f"Extracting {total} chunks, {workers} at a time",
+        total=total,
+    )
+    results: list[tuple[int, dict[str, Any] | None, Exception | None]] = []
+    completed = 0
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = {
+            pool.submit(provider.extract, chunk, config): index
+            for index, chunk in enumerate(chunks, start=1)
+        }
+        for future in as_completed(futures):
+            index = futures[future]
+            completed += 1
+            try:
+                payload = future.result()
+            except Exception as exc:
+                results.append((index, None, exc))
+                _emit(
+                    on_progress,
+                    "extracted",
+                    f"{completed} of {total} chunks done, one failed",
+                    current=completed,
+                    total=total,
+                )
+            else:
+                results.append((index, payload, None))
+                _emit(
+                    on_progress,
+                    "extracted",
+                    f"{completed} of {total} chunks done",
+                    current=completed,
+                    total=total,
+                )
+    results.sort(key=lambda item: item[0])
+    return results
+
+
+def extract_document(
+    path: Path,
+    filename: str,
+    config: VerticalConfig,
+    on_progress: ProgressCallback | None = None,
+) -> ExtractionResult:
     started = time.perf_counter()
+    _emit(on_progress, "reading", "Reading the document")
     text, read_meta = read_document(path)
     source_chars = len(text)
     if not text.strip():
         raise ExtractionError("The document contains no readable text. Scanned PDFs need OCR first.")
+    pages = read_meta.get("pages")
+    pages_note = (
+        f" from {pages} page{'s' if pages != 1 else ''}"
+        if isinstance(pages, int) and pages > 0
+        else ""
+    )
+    _emit(
+        on_progress,
+        "reading",
+        f"Read {source_chars:,} characters{pages_note}",
+    )
 
     chunks = chunk_text(text)
+    count = len(chunks)
+    _emit(
+        on_progress,
+        "chunking",
+        f"Split into {count} chunk{'s' if count != 1 else ''}",
+        total=count,
+    )
+
     provider = get_provider()
     model = build_record_model(config, lenient=True)
     records: list[dict[str, Any]] = []
     warnings: list[WarningItem] = []
     seen: set[str] = set()
 
-    for index, chunk in enumerate(chunks, start=1):
-        try:
-            payload = provider.extract(chunk, config)
-        except ProviderError as exc:
+    for index, payload, error in _extract_chunks(provider, chunks, config, on_progress):
+        if error is not None:
             warnings.append(
                 WarningItem(
                     code="chunk_failed",
-                    message=f"Chunk {index}/{len(chunks)} failed: {exc}",
+                    message=f"Chunk {index}/{len(chunks)} failed: {error}",
                     severity="error",
                 )
             )
             continue
-
+        assert payload is not None
         raw_records = payload.get("records", [])
         if not isinstance(raw_records, list):
             warnings.append(
@@ -211,6 +311,7 @@ def extract_document(path: Path, filename: str, config: VerticalConfig) -> Extra
                 seen.add(key)
             records.append(validated)
 
+    _emit(on_progress, "validating", "Normalizing and validating records")
     warnings.extend(validate_records(records, config))
     if not records and not any(w.severity == "error" for w in warnings):
         warnings.append(
@@ -220,6 +321,11 @@ def extract_document(path: Path, filename: str, config: VerticalConfig) -> Extra
                 severity="error",
             )
         )
+    _emit(
+        on_progress,
+        "validated",
+        f"{len(records)} record{'s' if len(records) != 1 else ''}, {len(warnings)} review note{'s' if len(warnings) != 1 else ''}",
+    )
 
     return ExtractionResult(
         records=records,

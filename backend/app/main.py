@@ -4,10 +4,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.supabase import is_supabase_configured
 from app.doc2data.storage import init_db
 from app.routers.doc2data import router as doc2data_router
-from app.routers.health_supabase import router as supabase_health_router
 
 
 def _cors_origins() -> list[str]:
@@ -37,14 +35,11 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Shared infra router (Supabase health check).
-    app.include_router(supabase_health_router)
-    # Doc2Data product router.
     app.include_router(doc2data_router)
 
     @app.get("/api/health")
     def health() -> dict[str, object]:
-        return {"status": "ok", "supabase_configured": is_supabase_configured()}
+        return {"status": "ok"}
 
     @app.get("/api/hello")
     def hello(name: str = "world") -> dict[str, str]:

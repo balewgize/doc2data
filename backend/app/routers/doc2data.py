@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import re
 import tempfile
+import threading
 import uuid
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.core.config import (
@@ -25,6 +28,7 @@ from app.doc2data.export import export_csv
 from app.doc2data.extract import (
     ExtractionError,
     ExtractionResult,
+    ProgressCallback,
     UnsupportedDocument,
     extract_document,
 )
@@ -84,10 +88,15 @@ def _save_result(result: ExtractionResult, filename: str, config) -> Run:
     return run
 
 
-def _run_document(path: Path, filename: str, vertical: str) -> Run:
+def _run_document(
+    path: Path,
+    filename: str,
+    vertical: str,
+    on_progress: ProgressCallback | None = None,
+) -> Run:
     config = _config(vertical)
     try:
-        result = extract_document(path, filename, config)
+        result = extract_document(path, filename, config, on_progress=on_progress)
     except UnsupportedDocument as exc:
         raise HTTPException(status_code=415, detail=str(exc)) from exc
     except ExtractionError as exc:
@@ -96,7 +105,66 @@ def _run_document(path: Path, filename: str, vertical: str) -> Run:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     result.meta["source_preview"] = path.parent.resolve() == SAMPLE_DIR.resolve()
-    return _save_result(result, filename, config)
+    if on_progress is not None:
+        on_progress({"stage": "saving", "message": "Saving the run"})
+    run = _save_result(result, filename, config)
+    if on_progress is not None:
+        on_progress({"stage": "saved", "message": "Run saved"})
+    return run
+
+
+async def _store_upload(file: UploadFile) -> tuple[Path, str]:
+    suffix = Path(file.filename or "").suffix.lower()
+    if suffix not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=415,
+            detail=f"Unsupported file type {suffix or 'unknown'}. Use PDF, XLSX, CSV, TXT, MD or JSON.",
+        )
+
+    content = await file.read()
+    if len(content) > MAX_UPLOAD_MB * 1024 * 1024:
+        raise HTTPException(status_code=413, detail=f"File is larger than {MAX_UPLOAD_MB} MB.")
+    if not content:
+        raise HTTPException(status_code=400, detail="The uploaded file is empty.")
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as handle:
+        handle.write(content)
+        path = Path(handle.name)
+    return path, file.filename or f"upload{suffix}"
+
+
+def _stream_run(work: Callable[[ProgressCallback], Run]) -> StreamingResponse:
+    """Run blocking extraction in a thread and stream progress as SSE."""
+    loop = asyncio.get_running_loop()
+    queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
+
+    def emit(event: dict[str, Any]) -> None:
+        loop.call_soon_threadsafe(queue.put_nowait, event)
+
+    def runner() -> None:
+        try:
+            run = work(emit)
+        except HTTPException as exc:
+            emit({"stage": "error", "message": str(exc.detail), "status": exc.status_code})
+        except Exception as exc:  # pragma: no cover - defensive boundary
+            emit({"stage": "error", "message": str(exc)})
+        else:
+            emit({"stage": "done", "message": "Done", "run": run.model_dump(mode="json")})
+
+    threading.Thread(target=runner, daemon=True).start()
+
+    async def events():
+        while True:
+            event = await queue.get()
+            yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+            if event["stage"] in ("done", "error"):
+                break
+
+    return StreamingResponse(
+        events(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 def _bundled_real_sample(config) -> Run:
@@ -184,28 +252,28 @@ async def extract(
     vertical: str = Form("ecommerce"),
 ) -> Run:
     config = _config(vertical)
-    suffix = Path(file.filename or "").suffix.lower()
-    if suffix not in ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=415,
-            detail=f"Unsupported file type {suffix or 'unknown'}. Use PDF, XLSX, CSV, TXT, MD or JSON.",
-        )
-
-    content = await file.read()
-    if len(content) > MAX_UPLOAD_MB * 1024 * 1024:
-        raise HTTPException(status_code=413, detail=f"File is larger than {MAX_UPLOAD_MB} MB.")
-    if not content:
-        raise HTTPException(status_code=400, detail="The uploaded file is empty.")
-
-    temp_path: Path | None = None
+    temp_path, filename = await _store_upload(file)
     try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as handle:
-            handle.write(content)
-            temp_path = Path(handle.name)
-        return _run_document(temp_path, file.filename or f"upload{suffix}", config.id)
+        return _run_document(temp_path, filename, config.id)
     finally:
-        if temp_path and temp_path.exists():
+        temp_path.unlink(missing_ok=True)
+
+
+@router.post("/extract/stream")
+async def extract_stream(
+    file: UploadFile = File(...),
+    vertical: str = Form("ecommerce"),
+) -> StreamingResponse:
+    config = _config(vertical)
+    temp_path, filename = await _store_upload(file)
+
+    def work(emit: ProgressCallback) -> Run:
+        try:
+            return _run_document(temp_path, filename, config.id, on_progress=emit)
+        finally:
             temp_path.unlink(missing_ok=True)
+
+    return _stream_run(work)
 
 
 @router.post("/extract/sample", response_model=Run)
@@ -226,6 +294,34 @@ def extract_sample(vertical: str = "ecommerce", real: bool = False) -> Run:
     if not sample.exists():
         raise HTTPException(status_code=404, detail=f"Sample file missing for {config.id}.")
     return _run_document(sample, sample.name, config.id)
+
+
+@router.post("/extract/sample/stream")
+async def extract_sample_stream(
+    vertical: str = "ecommerce",
+    real: bool = False,
+) -> StreamingResponse:
+    config = _config(vertical)
+    if real:
+        if not config.real_sample_file:
+            raise HTTPException(
+                status_code=400,
+                detail=f"No real sample is bundled for {config.label}.",
+            )
+        if resolved_provider() == "mock":
+            def work(emit: ProgressCallback) -> Run:
+                emit({"stage": "reading", "message": "Loading the bundled demo result"})
+                return _bundled_real_sample(config)
+            return _stream_run(work)
+        sample = SAMPLE_DIR / config.real_sample_file
+    else:
+        sample = SAMPLE_DIR / config.sample_file
+
+    if not sample.exists():
+        raise HTTPException(status_code=404, detail=f"Sample file missing for {config.id}.")
+    return _stream_run(
+        lambda emit: _run_document(sample, sample.name, config.id, on_progress=emit)
+    )
 
 
 @router.get("/runs")

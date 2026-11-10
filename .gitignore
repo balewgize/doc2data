@@ -31,3 +31,6 @@ next-env.d.ts
 demo_docs/
 private_docs/
 eval/private/
+
+# local research notes
+docs/REAL_DOCS.md

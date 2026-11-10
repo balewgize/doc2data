@@ -90,7 +90,18 @@ upload -> read -> chunk -> LLM -> normalize -> validate -> dedupe
 ```
 
 A vertical is a config: field specs, a prompt, a dedupe key and an export mapping. The
-pipeline, API, review screen and export pick it up automatically.
+pipeline, API, review screen and export pick it up automatically. Long documents are
+split at 12,000 characters and their chunks extract in parallel.
+
+## Speed
+
+- Name a fast model. `openrouter/auto` may route to a slower frontier model; pick a fast
+  slug from <https://openrouter.ai/models> for a demo.
+- Long documents extract chunks in parallel (`MAX_CHUNK_WORKERS`, default 4). Lower it
+  when one local Ollama model is the provider.
+- The UI streams real stages over SSE (read, split, extract, validate, save), so a slow
+  model call stays legible instead of showing an unlabeled spinner.
+- Ollama on CPU is the slow path. OpenRouter is the faster option for recording.
 
 | Industry | Output |
 |---|---|
@@ -114,11 +125,15 @@ Design notes:
 | GET | `/api/doc2data/health` | Provider, model, verticals, database |
 | GET | `/api/doc2data/verticals` | Available industry schemas |
 | POST | `/api/doc2data/extract` | Upload a document (`file`, `vertical`) |
+| POST | `/api/doc2data/extract/stream` | Upload a document, stream progress as SSE |
 | POST | `/api/doc2data/extract/sample?vertical=ecommerce` | Run a bundled sample |
+| POST | `/api/doc2data/extract/sample/stream` | Run a sample, stream progress as SSE |
 | GET | `/api/doc2data/runs` | Recent runs |
 | GET | `/api/doc2data/runs/{id}` | Full run, records and warnings |
 | PATCH | `/api/doc2data/runs/{id}/records/{index}` | Edit a field, then re-normalize and re-validate |
 | GET | `/api/doc2data/runs/{id}/export.csv` | Download the CSV |
+
+The app uses the `/stream` routes. The plain routes stay for scripts and API clients.
 
 ## Adding an industry
 
@@ -151,7 +166,6 @@ cd frontend && pnpm build       # frontend production build
 ## Docs
 
 - [Demo script for a 90 second Loom](docs/DEMO.md)
-- [Public samples and licences](docs/REAL_DOCS.md)
 - `./scripts/fetch_demo_docs.sh` downloads a public sample pack into `demo_docs/`
   (gitignored).
 - Built on [fastapi-nextjs-starter](https://github.com/balewgize/fastapi-nextjs-starter).

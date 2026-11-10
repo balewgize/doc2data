@@ -1,7 +1,7 @@
 """SQLite storage for runs.
 
 Deliberately boring: one table, JSON payloads, no ORM. The production swap to
-Postgres/Supabase only replaces this module.
+Postgres only replaces this module.
 """
 
 from __future__ import annotations
