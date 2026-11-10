@@ -3,18 +3,8 @@ services:
     build:
       context: ./backend
       target: prod
-    environment:
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
-      LLM_PROVIDER: ${LLM_PROVIDER:-mock}
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
-      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openrouter/auto}
-      OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-gemma3:1b}
-      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-20}
-      MAX_CHARS_PER_CHUNK: ${MAX_CHARS_PER_CHUNK:-12000}
-      MAX_CHUNK_WORKERS: ${MAX_CHUNK_WORKERS:-4}
-      DATABASE_PATH: /app/data/doc2data.db
+    env_file:
+      - .env
     ports:
       - "8000:8000"
     extra_hosts:
@@ -28,8 +18,6 @@ services:
       target: prod
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
-    environment:
-      BACKEND_URL: http://backend:8000
     ports:
       - "3000:3000"
     depends_on:

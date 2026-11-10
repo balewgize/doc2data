@@ -12,7 +12,7 @@ it is getting a clean, validated record into the system of record.
 
 ## Quick start (Docker)
 
-Requires Docker and Make.
+Requires Docker.
 
 ```bash
 cp .env.example .env
@@ -30,10 +30,9 @@ docker compose -f docker-compose.prod.yml up -d --build   # production build
 docker compose -f docker-compose.prod.yml down
 ```
 
-Compose reads `.env` from the project root, so provider keys and ports live in one file.
-
-The default provider is `mock`: deterministic, offline, no API key. The bundled public
-samples run the same way.
+The backend reads `.env` directly. The frontend receives only `NEXT_PUBLIC_API_URL`, so
+provider keys never enter that container. The default provider is `mock`: deterministic,
+offline, no API key. The bundled public samples run the same way.
 
 ### Native
 
@@ -51,6 +50,27 @@ pnpm install
 pnpm dev -p 3000
 ```
 
+## Configuration
+
+`.env` is the single source for both compose files and native runs.
+
+| Key | Default | Purpose |
+|---|---|---|
+| `LLM_PROVIDER` | `mock` | `mock`, `openrouter` or `ollama` |
+| `OPENROUTER_API_KEY` | empty | required when the provider is `openrouter` |
+| `OPENROUTER_MODEL` | `openrouter/auto` | any model slug from openrouter.ai/models |
+| `OLLAMA_MODEL` | `gemma3:1b` | local model; `OLLAMA_BASE_URL` is detected |
+| `MAX_UPLOAD_MB` | `20` | upload cap |
+| `MAX_CHARS_PER_CHUNK` | `12000` | split size for long documents |
+| `MAX_CHUNK_WORKERS` | `4` | chunks extracted in parallel |
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | browser to API; baked at build in prod |
+| `CORS_ORIGINS` | `http://localhost:3000` | backend allow-list |
+
+Leave `DATABASE_PATH` unset: Docker writes `/app/data/doc2data.db` and native runs write
+`backend/data/doc2data.db`. `OLLAMA_BASE_URL` follows the same rule, localhost natively
+and `host.docker.internal` inside Docker. If `LLM_PROVIDER` is unset, the app uses
+OpenRouter when a key is present, otherwise `mock`.
+
 ## Providers
 
 **OpenRouter**
@@ -61,8 +81,8 @@ OPENROUTER_API_KEY=sk-or-...
 OPENROUTER_MODEL=openrouter/auto
 ```
 
-Any model slug from <https://openrouter.ai/models> works. Keep the default
-`openrouter/auto` to let OpenRouter pick, or name a model for reproducible demos.
+Any model slug from <https://openrouter.ai/models> works. Name a specific model for
+reproducible demos; `openrouter/auto` routes by prompt and may pick a slower model.
 
 **Ollama (local)**
 
@@ -75,9 +95,8 @@ LLM_PROVIDER=ollama
 OLLAMA_MODEL=gemma3:1b
 ```
 
-Docker reaches the host Ollama through `host.docker.internal`. On Linux, if Ollama listens
-on `127.0.0.1` only, set `OLLAMA_HOST=0.0.0.0:11434` in the Ollama service. If
-`LLM_PROVIDER` is unset, the app uses OpenRouter when a key is present, otherwise `mock`.
+On Linux, if Ollama binds to `127.0.0.1` only, expose it with
+`OLLAMA_HOST=0.0.0.0:11434` in the Ollama service.
 
 ## How it works
 
@@ -93,16 +112,6 @@ A vertical is a config: field specs, a prompt, a dedupe key and an export mappin
 pipeline, API, review screen and export pick it up automatically. Long documents are
 split at 12,000 characters and their chunks extract in parallel.
 
-## Speed
-
-- Name a fast model. `openrouter/auto` may route to a slower frontier model; pick a fast
-  slug from <https://openrouter.ai/models> for a demo.
-- Long documents extract chunks in parallel (`MAX_CHUNK_WORKERS`, default 4). Lower it
-  when one local Ollama model is the provider.
-- The UI streams real stages over SSE (read, split, extract, validate, save), so a slow
-  model call stays legible instead of showing an unlabeled spinner.
-- Ollama on CPU is the slow path. OpenRouter is the faster option for recording.
-
 | Industry | Output |
 |---|---|
 | E-commerce catalog | Shopify product import CSV |
@@ -117,6 +126,16 @@ Design notes:
   totals and cross-field rules run in Python, before and after an inline edit.
 - **A provider interface with a deterministic fallback.** OpenRouter, Ollama and `mock`
   sit behind one call, so demos and tests run offline.
+
+## Speed
+
+- Name a fast model. `openrouter/auto` may route to a slower frontier model; pick a fast
+  slug from <https://openrouter.ai/models> for a demo.
+- Long documents extract chunks in parallel (`MAX_CHUNK_WORKERS`, default 4). Lower it
+  when one local Ollama model is the provider.
+- The UI streams real stages over SSE (read, split, extract, validate, save), so a slow
+  model call stays legible instead of showing an unlabeled spinner.
+- Ollama on CPU is the slow path. OpenRouter is the faster option for recording.
 
 ## API
 

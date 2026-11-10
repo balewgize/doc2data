@@ -24,11 +24,18 @@ def _env(name: str, default: str = "") -> str:
     return os.getenv(name, default).strip()
 
 
+_IN_CONTAINER = Path("/.dockerenv").exists()
+_OLLAMA_DEFAULT = (
+    "http://host.docker.internal:11434/v1"
+    if _IN_CONTAINER
+    else "http://localhost:11434/v1"
+)
+
 LLM_PROVIDER = _env("LLM_PROVIDER").lower()
 OPENROUTER_API_KEY = _env("OPENROUTER_API_KEY")
 OPENROUTER_MODEL = _env("OPENROUTER_MODEL", "openrouter/auto")
 OPENROUTER_BASE_URL = _env("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
-OLLAMA_BASE_URL = _env("OLLAMA_BASE_URL", "http://localhost:11434/v1")
+OLLAMA_BASE_URL = _env("OLLAMA_BASE_URL", _OLLAMA_DEFAULT)
 OLLAMA_MODEL = _env("OLLAMA_MODEL", "gemma3:1b")
 
 _default_database = (
